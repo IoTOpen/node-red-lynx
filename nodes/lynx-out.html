@@ -1,0 +1,170 @@
+<script type="text/javascript">
+    RED.nodes.registerType('lynx-out', {
+        category: 'IoT Open',
+        color: "#12b1be",
+        defaults: {
+            server: {value: "", type: "lynx-server"},
+            installation_id: {value: 0, required: true},
+            function_id: {value: 0, required: true},
+            function_name: {value: ""},
+            topic: {value: ""},
+            client_id: {value: 0},
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "lynx-out.png",
+        label: function () {
+            return this.function_name || "lynx-out"
+        },
+        oneditprepare: function () {
+            let node = this;
+            let functions = [];
+            let installations = [];
+            let selectedServer = RED.nodes.node(node.server.id);
+            let selectedInstallation = node.installation_id;
+            let selectedFunction = node.function_id;
+            let baseURL = "";
+            let apiKey = "";
+
+            if (selectedServer) {
+                baseURL = selectedServer.url;
+                apiKey = selectedServer.api_key;
+            }
+
+            let serverSelected = () => {
+                node.server = selectedServer;
+                baseURL = selectedServer.url;
+                apiKey = selectedServer.api_key;
+
+                $.getJSON('lynx/installations', {
+                    url: baseURL,
+                    apiKey: apiKey,
+                }, function (data) {
+                    let select = $("select#node-input-installation_id");
+                    select.empty();
+                    if (Array.isArray(data)) {
+                        installations = data;
+                        data.map(installation => {
+                            let selected = selectedInstallation === installation.id.toString();
+                            select.append(new Option(installation.name, installation.id, selected, selected));
+                            if (selected || node.installation_id === 0) {
+                                selectedInstallation = installation.id.toString();
+                                installationSelected();
+                            }
+                        });
+                    }
+                });
+            }
+
+            let installationSelected = () => {
+                installations.map(installation => {
+                    if (selectedInstallation.toString() === installation.id.toString()) {
+                        node.installation_id = installation.id;
+                        node.client_id = installation.client_id;
+                    }
+                });
+                $.getJSON('lynx/functions/' + selectedInstallation, {
+                    url: baseURL,
+                    apiKey: apiKey,
+                }, function (data) {
+                    let select = $("select#node-input-function_id");
+                    select.empty();
+                    if (Array.isArray(data)) {
+                        functions = data;
+                        functions.map(fun => {
+                            let selected = selectedFunction === fun.id.toString();
+                            select.append(new Option(fun.meta.name, fun.id, selected, selected));
+                            if (selected || node.function_id === 0) {
+                                selectedFunction = fun.id.toString();
+                                functionSelected();
+                            }
+                        });
+                    }
+                });
+
+            }
+
+            let functionSelected = () => {
+                functions.map(fun => {
+                    if (fun.id.toString() === selectedFunction.toString()) {
+                        node.function_id = fun.id;
+                        node.function_name = fun.meta.name;
+                        let inputType = $("#node-input-type");
+                        inputType.empty();
+
+                        for (let key in fun.meta) {
+                            if (fun.meta.hasOwnProperty(key) && key.startsWith("topic_")) {
+                                let topicButton = getTopicButton(key, fun.meta[key]);
+                                inputType.append(topicButton);
+                            }
+                        }
+                    }
+                });
+
+            }
+
+            let getTopicButton = (metaKey, metaValue) => {
+                let metaType = metaKey.substring(metaKey.indexOf('_') + 1, metaKey.length);
+                let btn = $('<button type="button" id="type-' + metaType + '" value="' + metaValue + '" class="red-ui-button toggle type-button-group">' + metaType + '<button/>');
+                if (node.topic === metaValue) {
+                    btn.addClass("selected");
+                }
+                btn.click(function () {
+                    $(".type-button-group").removeClass("selected");
+                    $(this).addClass("selected");
+                    node.topic = $(this).val();
+                });
+                return btn[0];
+            }
+
+            $("select#node-input-server").change(function () {
+                let val = $(this).val();
+                selectedServer = RED.nodes.node(val ? val : node.server.id);
+                if (selectedServer) {
+                    serverSelected();
+                }
+            });
+
+            $("select#node-input-installation_id").change(function () {
+                let val = $(this).val();
+                selectedInstallation = val ? val : node.installation_id.toString();
+                if (selectedServer) {
+                    installationSelected();
+                }
+            });
+
+            $("select#node-input-function_id").change(function () {
+                let val = $(this).val();
+                selectedFunction = val ? val : node.function_id.toString();
+                if (selectedServer) {
+                    functionSelected();
+                }
+            });
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="lynx-out">
+    <div class="form-row">
+        <label for="node-input-server"><i class="icon-bookmark"></i> Server</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-installation_id"><i class="icon-tag"></i> Installation</label>
+        <select id="node-input-installation_id">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-function_id"><i class="icon-tag"></i> Function</label>
+        <select id="node-input-function_id">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-type"><i class="icon-tag"></i> Topic</label>
+        <span id="node-input-type" class="button-group"></span>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="lynx-out">
+    <p>A simple node for receiving data from a function in Lynx</p>
+</script>

@@ -1,0 +1,32 @@
+{
+  "name": "node-red-contrib-lynx",
+  "version": "0.0.1",
+  "description": "Lynx nodes for node-red",
+  "repository": {
+    "type": "git",
+    "url": "https://git.iotopen.se/integrations/node-red-lynx"
+  },
+  "homepage": "https://iotopen.se",
+  "keywords": [
+    "node-red",
+    "lynx",
+    "iotopen"
+  ],
+  "author": {
+    "name": "IoT Open",
+    "email": "info@iotopen.se"
+  },
+  "license": "",
+  "node-red": {
+    "nodes": {
+      "lynx-server": "./nodes/lynx-server.js",
+      "lynx-in": "./nodes/lynx-in.js",
+      "lynx-out": "./nodes/lynx-out.js"
+    }
+  },
+  "dependencies": {
+    "mqtt": "^4.1.0",
+    "node-fetch": "^2.6.0",
+    "lynx": "1.0.0"
+  }
+}
