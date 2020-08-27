@@ -1,6 +1,6 @@
 module.exports = function (RED) {
     'use strict';
-    const {LynxClient} = require("lynx");
+    const {LynxClient} = require("@iotopen/node-lynx");
     const mqtt = require("mqtt");
 
     function matchTopic(sub, topic) {
