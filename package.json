@@ -1,10 +1,10 @@
 {
   "name": "node-red-contrib-lynx",
   "version": "0.0.1",
-  "description": "Lynx nodes for node-red",
+  "description": "NodeRED integration for IoT Open Lynx",
   "repository": {
     "type": "git",
-    "url": "https://git.iotopen.se/integrations/node-red-lynx"
+    "url": "https://github.com/IoTOpen/node-red-lynx"
   },
   "homepage": "https://iotopen.se",
   "keywords": [
@@ -16,7 +16,7 @@
     "name": "IoT Open",
     "email": "info@iotopen.se"
   },
-  "license": "",
+  "license": "Apache 2.0",
   "node-red": {
     "nodes": {
       "lynx-server": "./nodes/lynx-server.js",

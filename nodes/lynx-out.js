@@ -1,7 +1,29 @@
 'use strict';
 
+function convertPayload(incoming) {
+    let msg = {
+        timestamp: Date.now() / 1000
+    };
+
+    if (typeof incoming === "object") {
+        if (incoming.msg) {
+            msg.msg = incoming.msg;
+        }
+        if (incoming.value) {
+            msg.value = incoming.value;
+        }
+        if (incoming.timestamp) {
+            msg.timestamp = incoming.timestamp;
+        }
+    } else if (typeof incoming === "number") {
+        msg.value = incoming;
+    }
+
+    return msg;
+}
+
 module.exports = function (RED) {
-    function LynxOutNode(config) {
+    function LynxInNode(config) {
         RED.nodes.createNode(this, config);
         let node = this;
         this.server = RED.nodes.getNode(config.server);
@@ -15,20 +37,12 @@ module.exports = function (RED) {
                 text: "node-red:common.status.disconnected"
             });
 
-            let fullTopic = this.client_id + "/" + this.topic;
-            node.server.register(this);
-            node.server.subscribe(fullTopic, 0, (topic, payload, packet) => {
-                payload = payload.toString();
-                try {
-                    payload = JSON.parse(payload);
-                } catch (e) {
-                    node.error(RED._("lynx.errors.invalid-json-parse"),
-                        {payload: payload, topic: topic, qos: packet.qos, retain: packet.retain}
-                    );
-                    return;
-                }
-                node.send(payload);
-            }, this.id);
+            this.on('input', (msg, send, done) => {
+                msg.payload = convertPayload(msg.payload);
+                msg.topic = this.client_id + "/" + this.topic;
+
+                this.server.publish(msg, done);
+            });
 
             if (this.server.connected) {
                 this.status({
@@ -37,17 +51,14 @@ module.exports = function (RED) {
                     text: "node-red:common.status.connected"
                 });
             }
-
-            this.on('close', (removed, done) => {
-                if (node.server) {
-                    node.server.unsubscribe(fullTopic, node.id, removed);
-                    node.server.deregister(node, done);
-                }
+            node.server.register(node);
+            this.on('close', (done) => {
+                node.server.deregister(node, done);
             });
         } else {
             this.error(RED._("lynx.errors.missing-config"));
         }
     }
 
-    RED.nodes.registerType("lynx-out", LynxOutNode);
+    RED.nodes.registerType("lynx-out", LynxInNode);
 }

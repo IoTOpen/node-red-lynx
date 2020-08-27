@@ -10,8 +10,8 @@
             topic: {value: ""},
             client_id: {value: 0},
         },
-        inputs: 1,
-        outputs: 0,
+        inputs: 0,
+        outputs: 1,
         icon: "lynx-in.png",
         label: function () {
             return this.function_name || "lynx-in"
@@ -143,6 +143,7 @@
         },
     });
 </script>
+
 <script type="text/html" data-template-name="lynx-in">
     <div class="form-row">
         <label for="node-input-server"><i class="icon-bookmark"></i> Server</label>
@@ -165,5 +166,5 @@
 </script>
 
 <script type="text/html" data-help-name="lynx-in">
-    <p>A simple node for injecting data to a function in Lynx</p>
+    <p>A simple node for receiving data from a function in Lynx</p>
 </script>
