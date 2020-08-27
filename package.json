@@ -1,6 +1,6 @@
 {
   "name": "@iotopen/node-red-contrib-lynx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "NodeRED integration for IoT Open Lynx",
   "repository": {
     "type": "git",
