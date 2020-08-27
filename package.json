@@ -1,5 +1,5 @@
 {
-  "name": "node-red-contrib-lynx",
+  "name": "@iotopen/node-red-contrib-lynx",
   "version": "1.0.0",
   "description": "NodeRED integration for IoT Open Lynx",
   "repository": {
@@ -16,7 +16,7 @@
     "name": "IoT Open",
     "email": "info@iotopen.se"
   },
-  "license": "Apache 2.0",
+  "license": "Apache-2.0",
   "node-red": {
     "nodes": {
       "lynx-server": "./nodes/lynx-server.js",
@@ -27,6 +27,6 @@
   "dependencies": {
     "mqtt": "^4.1.0",
     "node-fetch": "^2.6.0",
-    "lynx": "1.0.0"
+    "@iotopen/node-lynx": "1.0.0"
   }
 }
