@@ -1,6 +1,6 @@
 module.exports = function (RED) {
     'use strict';
-    const {LynxClient} = require("@iotopen/node-lynx");
+    const lynx = require("@iotopen/node-lynx");
     const mqtt = require("mqtt");
 
     function matchTopic(sub, topic) {
@@ -228,7 +228,7 @@ module.exports = function (RED) {
         let baseURL = req.query.url;
         let apiKey = req.query.apiKey;
 
-        const cli = new LynxClient(baseURL, apiKey);
+        const cli = new lynx.LynxClient(baseURL, apiKey);
         cli.getInstallations()
             .then(json => {
                 res.json(json)
@@ -243,7 +243,7 @@ module.exports = function (RED) {
         let apiKey = req.query.apiKey;
         let installationId = req.params.installation_id;
 
-        const cli = new LynxClient(baseURL, apiKey);
+        const cli = new lynx.LynxClient(baseURL, apiKey);
         cli.getFunctions(installationId)
             .then(json => {
                 res.json(json)
