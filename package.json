@@ -1,9 +1,9 @@
 {
   "name": "@iotopen/node-red-contrib-lynx",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "NodeRED integration for IoT Open Lynx",
   "scripts": {
-    "prepublish": "babel nodes/ --out-dir lib"
+    "prepublish": "babel nodes/ --out-dir lib && cp nodes/*.html lib/"
   },
   "repository": {
     "type": "git",
