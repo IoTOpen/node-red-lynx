@@ -8,7 +8,7 @@ module.exports = function (RED) {
             return true;
         }
 
-        let re = new RegExp("^" + sub.replace(/([\[\]\?\(\)\\\\$\^\*\.|])/g, "\\$1").replace(/\+/g, "[^/]+").replace(/\/#$/, "(\/.*)?") + "$");
+        var re = new RegExp("^" + sub.replace(/([\[\]\?\(\)\\\\$\^\*\.|])/g, "\\$1").replace(/\+/g, "[^/]+").replace(/\/#$/, "(\/.*)?") + "$");
         return re.test(topic);
     }
 
@@ -40,7 +40,7 @@ module.exports = function (RED) {
         this.options.clean = true;
 
         // Defined function for other nodes to use
-        let node = this;
+        var node = this;
         this.users = {};
 
         this.register = (lynxNode) => {
@@ -78,7 +78,7 @@ module.exports = function (RED) {
                         node.connected = true;
                         // Logging?
                         node.log(RED._("lynx.state.connected", {broker: node.options.clientID + "@" + node.broker}));
-                        for (let id in node.users) {
+                        for (var id in node.users) {
                             if (node.users.hasOwnProperty(id)) {
                                 node.users[id].status({
                                     fill: "green",
@@ -88,24 +88,24 @@ module.exports = function (RED) {
                             }
                         }
                         node.client.removeAllListeners('message');
-                        for (let s in node.subscriptions) {
+                        for (var s in node.subscriptions) {
                             if (node.subscriptions.hasOwnProperty(s)) {
-                                let topic = s;
-                                let qos = 0;
+                                var topic = s;
+                                var qos = 0;
 
-                                for (let r in node.subscriptions[s]) {
+                                for (var r in node.subscriptions[s]) {
                                     if (node.subscriptions[s].hasOwnProperty(r)) {
                                         node.client.on('message', node.subscriptions[s][r].handler);
                                     }
                                 }
-                                let options = {qos: 0};
+                                var options = {qos: 0};
                                 node.client.subscribe(topic, options);
                             }
                         }
                     });
 
                     node.client.on('reconnect', () => {
-                        for (let id in node.users) {
+                        for (var id in node.users) {
                             if (node.users.hasOwnProperty(id)) {
                                 node.users[id].status({
                                     fill: "yellow",
@@ -122,7 +122,7 @@ module.exports = function (RED) {
 
                             node.log(RED._("lynx.state.disconnected", {broker: node.options.clientID + "@" + node.broker}));
 
-                            for (let id in node.users) {
+                            for (var id in node.users) {
                                 if (node.hasOwnProperty(id)) {
                                     node.users[id].status({
                                         fill: "red",
@@ -146,7 +146,7 @@ module.exports = function (RED) {
         this.subscribe = (topic, qos, callback, ref) => {
             ref = ref || 0;
             node.subscriptions[topic] = node.subscriptions[topic] || {};
-            let sub = {
+            var sub = {
                 topic: topic,
                 qos: qos,
                 handler: (mTopic, mPayload, mPacket) => {
@@ -159,7 +159,7 @@ module.exports = function (RED) {
             node.subscriptions[topic][ref] = sub;
             if (node.connected) {
                 node.client.on('message', sub.handler);
-                let options = {};
+                var options = {};
                 options.qos = qos;
                 node.client.subscribe(topic, options);
             }
@@ -167,7 +167,7 @@ module.exports = function (RED) {
 
         this.unsubscribe = (topic, ref, removed) => {
             ref = ref || 0;
-            let sub = node.subscriptions[topic];
+            var sub = node.subscriptions[topic];
             if (sub) {
                 if (sub[ref]) {
                     node.client.removeListener('message', sub[ref].handler);
@@ -196,7 +196,7 @@ module.exports = function (RED) {
                     }
                 }
 
-                let options = {
+                var options = {
                     qos: msg.qos || 0,
                     retain: msg.retain || false
                 };
@@ -225,8 +225,8 @@ module.exports = function (RED) {
     RED.nodes.registerType('lynx-server', LynxServerNode);
 
     RED.httpAdmin.get("/lynx/installations", RED.auth.needsPermission('lynx_server.read'), function (req, res) {
-        let baseURL = req.query.url;
-        let apiKey = req.query.apiKey;
+        var baseURL = req.query.url;
+        var apiKey = req.query.apiKey;
 
         const cli = new lynx.LynxClient(baseURL, apiKey);
         cli.getInstallations()
@@ -239,9 +239,9 @@ module.exports = function (RED) {
     });
 
     RED.httpAdmin.get("/lynx/functions/:installation_id", RED.auth.needsPermission('lynx_server.read'), function (req, res) {
-        let baseURL = req.query.url;
-        let apiKey = req.query.apiKey;
-        let installationId = req.params.installation_id;
+        var baseURL = req.query.url;
+		var  apiKey = req.query.apiKey;
+        var installationId = req.params.installation_id;
 
         const cli = new lynx.LynxClient(baseURL, apiKey);
         cli.getFunctions(installationId)
