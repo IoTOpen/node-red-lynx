@@ -27,7 +27,11 @@ module.exports = function (RED) {
                     );
                     return;
                 }
-                node.send(payload);
+				let out = {
+					payload: payload,
+					topic: topic
+				}
+                node.send(out);
             }, this.id);
 
             if (this.server.connected) {
