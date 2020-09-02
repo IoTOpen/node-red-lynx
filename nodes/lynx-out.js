@@ -6,13 +6,13 @@ function convertPayload(incoming) {
     };
 
     if (typeof incoming === "object") {
-        if (incoming.msg) {
+        if (typeof incoming.msg === "string") {
             msg.msg = incoming.msg;
         }
-        if (incoming.value) {
+        if (typeof incoming.value === "number") {
             msg.value = incoming.value;
         }
-        if (incoming.timestamp) {
+        if (typeof incoming.timestamp === "number") {
             msg.timestamp = incoming.timestamp;
         }
     } else if (typeof incoming === "number") {
