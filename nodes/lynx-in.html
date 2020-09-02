@@ -166,5 +166,18 @@
 </script>
 
 <script type="text/html" data-help-name="lynx-in">
-    <p>A simple node for receiving data from a function in Lynx</p>
+    <p>
+	A for receiving data from a function on a Lynx server. In the
+	properties server, installation, function and what topic to get data
+	from is set. The data from that function is then sent from the node
+	when it arrives.
+    </p>
+    <h3>
+	Output
+    </h3>
+    <p>
+	The output has <code>msg.payload</code> set to the data from Lynx and
+	the <code>msg.topic</code> is set to the topic used in Lynx to identify
+	the data. 	
+    </p>
 </script>
