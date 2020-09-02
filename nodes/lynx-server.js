@@ -34,7 +34,7 @@ module.exports = function (RED) {
             this.broker = "mqtts://" + this.broker_url;
         }
 
-        this.options.clientID = 'node-red_' + Math.random().toString(16).substr(2, 8);
+        this.options.clientId = 'node-red_' + Math.random().toString(16).substr(2, 8);
         this.options.username = 'node-red';
         this.options.password = this.api_key;
         this.options.clean = true;
