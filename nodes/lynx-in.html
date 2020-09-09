@@ -57,6 +57,7 @@
             }
 
             let installationSelected = () => {
+                node.function_id = 0;
                 installations.map(installation => {
                     if (selectedInstallation.toString() === installation.id.toString()) {
                         node.installation_id = installation.id;
@@ -92,10 +93,15 @@
                         let inputType = $("#node-input-type");
                         inputType.empty();
 
+                        let selectedFirst = false;
                         for (let key in fun.meta) {
                             if (fun.meta.hasOwnProperty(key) && key.startsWith("topic_")) {
                                 let topicButton = getTopicButton(key, fun.meta[key]);
                                 inputType.append(topicButton);
+                                if (!selectedFirst) {
+                                    topicButton.click();
+                                    selectedFirst = true;
+                                }
                             }
                         }
                     }
