@@ -24,11 +24,12 @@
     "nodes": {
       "lynx-server": "./lib/lynx-server.js",
       "lynx-in": "./lib/lynx-in.js",
-      "lynx-out": "./lib/lynx-out.js"
+      "lynx-out": "./lib/lynx-out.js",
+      "lynx-get-meta": "./lib/lynx-get-meta.js"
     }
   },
   "dependencies": {
-    "@iotopen/node-lynx": "^1.0.2",
+    "@iotopen/node-lynx": "^1.1.1",
     "mqtt": "^4.1.0",
     "node-fetch": "^2.6.0"
   },
