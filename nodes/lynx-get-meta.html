@@ -1,20 +1,19 @@
 <script type="text/javascript">
-    RED.nodes.registerType('lynx-in', {
+    RED.nodes.registerType('lynx-get-meta', {
         category: 'IoT Open',
         color: "#12b1be",
         defaults: {
             server: {value: "", type: "lynx-server"},
             installation_id: {value: 0, required: true},
             function_id: {value: 0, required: true},
-            function_name: {value: ""},
-            topic: {value: ""},
             client_id: {value: 0},
+            function_name: {value: ""},
         },
-        inputs: 0,
+        inputs: 1,
         outputs: 1,
-        icon: "lynx-in.png",
+        icon: "lynx-get-meta.png",
         label: function () {
-            return this.function_name || "lynx-in"
+            return this.function_name || "lynx-get-meta"
         },
         oneditprepare: function () {
             let node = this;
@@ -57,7 +56,6 @@
             }
 
             let installationSelected = () => {
-                node.function_id = 0;
                 installations.map(installation => {
                     if (selectedInstallation.toString() === installation.id.toString()) {
                         node.installation_id = installation.id;
@@ -90,37 +88,9 @@
                     if (fun.id.toString() === selectedFunction.toString()) {
                         node.function_id = fun.id;
                         node.function_name = fun.meta.name;
-                        let inputType = $("#node-input-type");
-                        inputType.empty();
-
-                        let selectedFirst = false;
-                        for (let key in fun.meta) {
-                            if (fun.meta.hasOwnProperty(key) && key.startsWith("topic_")) {
-                                let topicButton = getTopicButton(key, fun.meta[key]);
-                                inputType.append(topicButton);
-                                if (!selectedFirst) {
-                                    topicButton.click();
-                                    selectedFirst = true;
-                                }
-                            }
-                        }
                     }
                 });
 
-            }
-
-            let getTopicButton = (metaKey, metaValue) => {
-                let metaType = metaKey.substring(metaKey.indexOf('_') + 1, metaKey.length);
-                let btn = $('<button type="button" id="type-' + metaType + '" value="' + metaValue + '" class="red-ui-button toggle type-button-group">' + metaType + '<button/>');
-                if (node.topic === metaValue) {
-                    btn.addClass("selected");
-                }
-                btn.click(function () {
-                    $(".type-button-group").removeClass("selected");
-                    $(this).addClass("selected");
-                    node.topic = $(this).val();
-                });
-                return btn[0];
             }
 
             $("select#node-input-server").change(function () {
@@ -150,7 +120,7 @@
     });
 </script>
 
-<script type="text/html" data-template-name="lynx-in">
+<script type="text/html" data-template-name="lynx-get-meta">
     <div class="form-row">
         <label for="node-input-server"><i class="icon-bookmark"></i> Server</label>
         <input type="text" id="node-input-server">
@@ -165,25 +135,24 @@
         <select id="node-input-function_id">
         </select>
     </div>
-    <div class="form-row">
-        <label for="node-input-type"><i class="icon-tag"></i> Topic</label>
-        <span id="node-input-type" class="button-group"></span>
-    </div>
 </script>
 
-<script type="text/html" data-help-name="lynx-in">
+<script type="text/html" data-help-name="lynx-get-meta">
     <p>
-        A node for receiving data from a function on a Lynx server. In the
-        properties: server, installation, function and what topic to get data
-        from is set. The data from that function is then sent from the node
-        when it arrives.
+        A node for injecting metadata from a function on a Lynx server. The
+        meta-data is added in the <code>msg.meta</code> value. Some additional
+        properties is also added to the msg object.
     </p>
-    <h3>
-        Output
-    </h3>
+    <h3>Input</h3>
     <p>
-        The output has <code>msg.payload</code> set to the data from Lynx and
-        the <code>msg.topic</code> is set to the topic used in Lynx to identify
-        the data.
+        The input takes any <code>msg</code> object and will inject the
+        data in the object.
+    </p>
+    <h3>Output</h3>
+    <p>
+        The output is the same as the input object but with
+        <code>msg.meta</code> added. It will contain keys and values from
+        the selected functions meta-data. The values <code>msg.installation_id</code>
+        and <code>msg.client_id</code> will also be added.
     </p>
 </script>
