@@ -20,3 +20,6 @@ number or an object containing the following data.
 | value | number |
 | msg | string |
 | timestamp (optional) | number |
+
+### Lynx Get Metadata
+The node injects metadata into the flow. Can be used to attach values from lynx to the msg object. All data is injected as `msg.meta`.
