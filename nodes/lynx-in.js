@@ -7,6 +7,8 @@ module.exports = function (RED) {
         this.server = RED.nodes.getNode(config.server);
         this.topic = config.topic;
         this.client_id = config.client_id;
+        this.installation_id = config.installation_id;
+        this.function_id = config.function_id;
 
         if (this.server) {
             this.status({
@@ -27,10 +29,13 @@ module.exports = function (RED) {
                     );
                     return;
                 }
-				let out = {
-					payload: payload,
-					topic: topic
-				}
+                let out = {
+                    payload: payload,
+                    topic: topic,
+                    function_id: this.function_id,
+                    installation_id: this.installation_id,
+                    lynx_server: config.server
+                }
                 node.send(out);
             }, this.id);
 
