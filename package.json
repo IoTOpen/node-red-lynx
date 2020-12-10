@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "NodeRED integration for IoT Open Lynx",
   "scripts": {
-    "prepublish": "babel nodes/ --out-dir lib && cp nodes/*.html lib/",
+    "prepare": "babel nodes/ --out-dir lib && cp nodes/*.html lib/",
     "debug": "babel nodes/ --out-dir lib && cp nodes/*.html lib/ && node-red"
   },
   "repository": {
