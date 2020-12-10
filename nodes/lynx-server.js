@@ -43,14 +43,14 @@ module.exports = function (RED) {
         let node = this;
         this.users = {};
 
-        this.register = (lynxNode) => {
+        this.register = function(lynxNode) {
             node.users[lynxNode.id] = lynxNode;
             if (Object.keys(node.users).length === 1) {
                 node.connect();
             }
         };
 
-        this.deregister = (lynxNode, done) => {
+        this.deregister = function(lynxNode, done) {
             delete node.users[lynxNode.id];
             if (node.closing) {
                 return done();
@@ -67,13 +67,13 @@ module.exports = function (RED) {
             done();
         };
 
-        this.connect = () => {
+        this.connect = function() {
             if (!node.connected && !node.connecting) {
                 node.connecting = true;
                 try {
                     node.client = mqtt.connect(node.broker, node.options);
                     node.client.setMaxListeners(0);
-                    node.client.on('connect', () => {
+                    node.client.on('connect', function() {
                         node.connecting = false;
                         node.connected = true;
                         node.log(RED._("lynx.state.connected", {broker: node.options.clientID + "@" + node.broker}));
@@ -103,7 +103,7 @@ module.exports = function (RED) {
                         }
                     });
 
-                    node.client.on('reconnect', () => {
+                    node.client.on('reconnect', function() {
                         for (var id in node.users) {
                             if (node.users.hasOwnProperty(id)) {
                                 node.users[id].status({
@@ -115,7 +115,7 @@ module.exports = function (RED) {
                         }
                     });
 
-                    node.client.on('close', () => {
+                    node.client.on('close', function() {
                         if (node.connected) {
                             node.connected = false;
 
@@ -134,7 +134,7 @@ module.exports = function (RED) {
                             node.log(RED._("lynx.state.connect-failed", {broker: node.options.clientID + "@" + node.broker}));
                         }
                     });
-                    node.client.on('error', () => {
+                    node.client.on('error', function() {
                     });
                 } catch (err) {
                     console.log(err);
@@ -142,13 +142,13 @@ module.exports = function (RED) {
             }
         }
 
-        this.subscribe = (topic, qos, callback, ref) => {
+        this.subscribe = function(topic, qos, callback, ref) {
             ref = ref || 0;
             node.subscriptions[topic] = node.subscriptions[topic] || {};
             let sub = {
                 topic: topic,
                 qos: qos,
-                handler: (mTopic, mPayload, mPacket) => {
+                handler: function(mTopic, mPayload, mPacket) {
                     if (matchTopic(topic, mTopic)) {
                         callback(mTopic, mPayload, mPacket);
                     }
@@ -164,7 +164,7 @@ module.exports = function (RED) {
             }
         }
 
-        this.unsubscribe = (topic, ref, removed) => {
+        this.unsubscribe = function(topic, ref, removed) {
             ref = ref || 0;
             let sub = node.subscriptions[topic];
             if (sub) {
@@ -183,7 +183,7 @@ module.exports = function (RED) {
             }
         }
 
-        this.publish = (msg, done) => {
+        this.publish = function(msg, done) {
             if (node.connected) {
                 if (msg.payload === null || msg.payload === undefined) {
                     msg.payload = "";
@@ -199,16 +199,16 @@ module.exports = function (RED) {
                     qos: msg.qos || 0,
                     retain: msg.retain || false
                 };
-                node.client.publish(msg.topic, msg.payload, options, (err) => {
+                node.client.publish(msg.topic, msg.payload, options, function(err) {
                     done && done();
                 });
             }
         }
 
-        this.on('close', (done) => {
+        this.on('close', function(done) {
             this.closing = true;
             if (this.connected) {
-                this.client.once('close', () => {
+                this.client.once('close', function() {
                     done();
                 });
                 this.client.end();
