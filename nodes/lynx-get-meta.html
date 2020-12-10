@@ -20,30 +20,21 @@
             let node = this;
             let functions = [];
             let installations = [];
-            let selectedServer = RED.nodes.node(node.server.id);
+            let selectedServer = RED.nodes.node(node.server.id ? node.server.id : node.server);
             let selectedInstallation = node.installation_id;
             let selectedFunction = node.function_id;
             let useMsg = node.use_msg;
-            let baseURL = "";
-            let apiKey = "";
-
-            if (selectedServer) {
-                baseURL = selectedServer.url;
-                apiKey = selectedServer.api_key;
-            }
 
             if (useMsg) {
                 $("#server-fields").hide();
             }
 
             let serverSelected = () => {
-                node.server = selectedServer;
-                baseURL = selectedServer.url;
-                apiKey = selectedServer.api_key;
+                node.server = selectedServer.id;
 
                 $.getJSON('lynx/installations', {
-                    url: baseURL,
-                    apiKey: apiKey,
+                    url: selectedServer.url,
+                    apiKey: selectedServer.api_key,
                 }, function (data) {
                     let select = $("select#node-input-installation_id");
                     select.empty();
@@ -53,37 +44,39 @@
                             let selected = selectedInstallation === installation.id.toString();
                             select.append(new Option(installation.name, installation.id, selected, selected));
                             if (selected || node.installation_id === 0) {
-                                selectedInstallation = installation.id.toString();
-                                installationSelected();
+                                selectedInstallation = installation.id;
+                                installationSelected(selectedInstallation);
                             }
                         });
                     }
                 });
             }
 
-            let installationSelected = () => {
+            let installationSelected = (installationId) => {
                 installations.map(installation => {
-                    if (selectedInstallation.toString() === installation.id.toString()) {
+                    if (selectedInstallation === installation.id) {
                         node.installation_id = installation.id;
                         node.client_id = installation.client_id;
                     }
                 });
                 $.getJSON('lynx/functions/' + selectedInstallation, {
-                    url: baseURL,
-                    apiKey: apiKey,
+                    url: selectedServer.url,
+                    apiKey: selectedServer.api_key,
                 }, function (data) {
-                    let select = $("select#node-input-function_id");
-                    select.empty();
-                    if (Array.isArray(data)) {
-                        functions = data;
-                        functions.map(fun => {
-                            let selected = selectedFunction === fun.id.toString();
-                            select.append(new Option(fun.meta.name, fun.id, selected, selected));
-                            if (selected || node.function_id === 0) {
-                                selectedFunction = fun.id.toString();
-                                functionSelected();
-                            }
-                        });
+                    if (selectedInstallation === installationId) {
+                        let select = $("select#node-input-function_id");
+                        select.empty();
+                        if (Array.isArray(data)) {
+                            functions = data;
+                            functions.map(fun => {
+                                let selected = selectedFunction === fun.id;
+                                select.append(new Option(fun.meta.name, fun.id, selected, selected));
+                                if (selected || node.function_id === 0) {
+                                    selectedFunction = fun.id;
+                                    functionSelected();
+                                }
+                            });
+                        }
                     }
                 });
 
@@ -91,34 +84,40 @@
 
             let functionSelected = () => {
                 functions.map(fun => {
-                    if (fun.id.toString() === selectedFunction.toString()) {
+                    if (fun.id === selectedFunction) {
                         node.function_id = fun.id;
                         node.function_name = fun.meta.name;
                     }
                 });
             }
 
-            $("select#node-input-server").change(function () {
-                let val = $(this).val();
-                selectedServer = RED.nodes.node(val ? val : node.server.id);
-                if (selectedServer) {
-                    serverSelected();
+            $("select#node-input-server").change(function (e) {
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedServer = RED.nodes.node(val ? val : node.server.id);
+                    if (selectedServer) {
+                        serverSelected();
+                    }
                 }
             });
 
             $("select#node-input-installation_id").change(function () {
-                let val = $(this).val();
-                selectedInstallation = val ? val : node.installation_id.toString();
-                if (selectedServer) {
-                    installationSelected();
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedInstallation = val ? parseInt(val) : node.installation_id;
+                    if (selectedServer) {
+                        installationSelected(selectedInstallation);
+                    }
                 }
             });
 
             $("select#node-input-function_id").change(function () {
-                let val = $(this).val();
-                selectedFunction = val ? val : node.function_id.toString();
-                if (selectedServer) {
-                    functionSelected();
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedFunction = val ? parseInt(val) : node.function_id;
+                    if (selectedServer) {
+                        functionSelected();
+                    }
                 }
             });
 
