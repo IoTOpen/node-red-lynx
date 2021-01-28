@@ -24,7 +24,6 @@ module.exports = function (RED) {
     this.connected = false
     this.connecting = false
     this.closing = false
-    this.options = {}
     this.queue = []
     this.subscriptions = {}
 
@@ -34,10 +33,12 @@ module.exports = function (RED) {
       this.broker = 'mqtts://' + this.broker_url
     }
 
-    this.options.clientId = 'node-red_' + Math.random().toString(16).substr(2, 8)
-    this.options.username = 'node-red'
-    this.options.password = this.api_key
-    this.options.clean = true
+    this.options = {
+      clientId: 'node-red_' + Math.random().toString(16).substr(2, 8),
+      username: 'node-red',
+      password: this.api_key,
+      clean: true
+    }
 
     // Defined function for other nodes to use
     const node = this
@@ -129,8 +130,11 @@ module.exports = function (RED) {
           }
         })
 
-        node.client.on('error', () => {})
+        node.client.on('error', (err) => {
+          console.error(err)
+        })
       } catch (err) {
+        node.connecting = false
         console.error(err)
       }
     }
@@ -206,16 +210,13 @@ module.exports = function (RED) {
     this.on('close', (done) => {
       this.closing = true
 
-      if (this.connected) {
-        this.client.once('close', () => {
+      if (this.connected || this.connecting || node.client.reconnecting) {
+        this.client.end(() => {
+          this.closing = false
           done()
         })
-
-        this.client.end()
-      } else if (this.connecting || node.client.reconnecting) {
-        node.client.end()
-        done()
       } else {
+        this.closing = false
         done()
       }
     })
