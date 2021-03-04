@@ -4,39 +4,25 @@ module.exports = function (RED) {
   function LynxInNode (config) {
     RED.nodes.createNode(this, config)
     const node = this
-    this.server = RED.nodes.getNode(config.server)
-    this.topic = config.topic
-    this.client_id = config.client_id
+    const server = RED.nodes.getNode(config.server)
 
-    if (!this.server) {
-      return this.error(RED._('lynx.errors.missing-config'))
+    const topic = config.topic
+    const clientId = config.client_id
+
+    if (!server) {
+      return node.error(RED._('lynx.errors.missing-config'))
     }
 
-    this.status({
-      fill: 'red',
-      shape: 'dot',
-      text: 'node-red:common.status.disconnected'
+    server.register(config.id, node)
+
+    node.on('close', (done) => {
+      server.deregister(config.id, done)
     })
 
-    this.on('input', (msg, send, done) => {
+    node.on('input', (msg, send, done) => {
       msg.payload = convertPayload(msg.payload)
-      msg.topic = this.client_id + '/' + this.topic
-
-      this.server.publish(msg, done)
-    })
-
-    if (this.server.connected) {
-      this.status({
-        fill: 'green',
-        shape: 'dot',
-        text: 'node-red:common.status.connected'
-      })
-    }
-
-    node.server.register(node)
-
-    this.on('close', (done) => {
-      node.server.deregister(node, done)
+      msg.topic = clientId + '/' + topic
+      server.publish(msg, done)
     })
   }
 

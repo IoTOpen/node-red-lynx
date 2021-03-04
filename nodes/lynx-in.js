@@ -4,58 +4,52 @@ module.exports = function (RED) {
   function LynxOutNode (config) {
     RED.nodes.createNode(this, config)
     const node = this
-    this.server = RED.nodes.getNode(config.server)
-    this.topic = config.topic
-    this.client_id = config.client_id
-    this.installation_id = config.installation_id
-    this.function_id = config.function_id
+    const server = RED.nodes.getNode(config.server)
 
-    if (!this.server) {
-      return this.error(RED._('lynx.errors.missing-config'))
+    const topic = config.topic
+    const clientId = config.client_id
+    const installationId = config.installation_id
+    const functionId = config.function_id
+    const qos = config.qos || 0
+
+    if (!server) {
+      return node.error(RED._('lynx.errors.missing-config'))
     }
 
-    this.status({
-      fill: 'red',
-      shape: 'dot',
-      text: 'node-red:common.status.disconnected'
-    })
-
-    const fullTopic = this.client_id + '/' + this.topic
-    node.server.register(this)
-
-    node.server.subscribe(fullTopic, 0, (topic, payload, packet) => {
-      payload = payload.toString()
-
-      try {
-        payload = JSON.parse(payload)
-      } catch (e) {
-        return node.error(RED._('lynx.errors.invalid-json-parse'), { payload, topic, qos: packet.qos, retain: packet.retain })
-      }
-
-      const out = {
-        payload,
-        topic,
-        function_id: this.function_id,
-        installation_id: this.installation_id,
-        lynx_server: config.server
-      }
-
-      node.send(out)
-    }, this.id)
-
-    if (this.server.connected) {
-      this.status({
-        fill: 'green',
-        shape: 'dot',
-        text: 'node-red:common.status.connected'
-      })
-    }
+    server.register(config.id, node)
 
     this.on('close', (removed, done) => {
-      if (node.server) {
-        node.server.unsubscribe(fullTopic, node.id, removed)
-        node.server.deregister(node, done)
-      }
+      if (!server) return
+
+      server.unsubscribe(fullTopic)
+      server.offMessage(config.id, fullTopic)
+      server.deregister(config.id, done)
+    })
+
+    const fullTopic = clientId + '/' + topic
+
+    server.subscribe(fullTopic, { qos }, (err) => {
+      if (err) return node.send(err)
+
+      server.onMessage(config.id, fullTopic, (topic, payload, packet) => {
+        payload = payload.toString()
+
+        try {
+          payload = JSON.parse(payload)
+        } catch (e) {
+          return node.error(RED._('lynx.errors.invalid-json-parse'), { payload, topic, qos: packet.qos, retain: packet.retain })
+        }
+
+        const out = {
+          payload,
+          topic,
+          function_id: functionId,
+          installation_id: installationId,
+          lynx_server: server
+        }
+
+        node.send(out)
+      })
     })
   }
 

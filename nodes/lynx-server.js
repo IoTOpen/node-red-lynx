@@ -3,187 +3,115 @@ module.exports = function (RED) {
   const lynx = require('@iotopen/node-lynx')
   const mqtt = require('mqtt')
 
-  function matchTopic (sub, topic) {
-    if (sub === '#') {
-      return true
+  const INDICATOR_STATUS = {
+    CONNECTED: {
+      fill: 'green',
+      shape: 'dot',
+      text: 'node-red:common.status.connected'
+    },
+    CONNECTING: {
+      fill: 'yellow',
+      shape: 'dot',
+      text: 'node-red:common.status.connecting'
+    },
+    DISCONNECTED: {
+      fill: 'red',
+      shape: 'dot',
+      text: 'node-red:common.status.disconnected'
     }
-
-    const re = new RegExp('^' + sub.replace(/([[\]?()\\\\$^*.|])/g, '\\$1').replace(/\+/g, '[^/]+').replace(/\/#$/, '(/.*)?') + '$')
-    return re.test(topic)
   }
 
   function LynxServerNode (n) {
     RED.nodes.createNode(this, n)
+    const node = this
+
+    // Used to count other nodes that uses the server
+    const users = {}
+
     // Node config parameters
-    this.url = n.url
-    this.api_key = n.api_key
-    this.broker_url = n.broker_url
+    const apiKey = n.api_key
+    const brokerUrl = n.broker_url
+    const broker = brokerUrl.indexOf('://') > -1 ? brokerUrl : 'mqtts://' + brokerUrl
 
-    // Node state
-    this.broker = ''
-    this.connected = false
-    this.connecting = false
-    this.closing = false
-    this.queue = []
-    this.subscriptions = {}
-
-    if (this.broker_url.indexOf('://') > -1) {
-      this.broker = this.broker_url
-    } else {
-      this.broker = 'mqtts://' + this.broker_url
-    }
-
-    this.options = {
+    const options = {
       clientId: 'node-red_' + Math.random().toString(16).substr(2, 8),
       username: 'node-red',
-      password: this.api_key,
+      password: apiKey,
       clean: true
     }
 
-    // Defined function for other nodes to use
-    const node = this
-    this.users = {}
+    // Node state
+    let client = null
+    let connecting = false
+    let closing = false
+    let queue = []
+    const messageHandlers = {}
 
-    this.register = (lynxNode) => {
-      node.users[lynxNode.id] = lynxNode
-
-      if (Object.keys(node.users).length === 1) {
-        node.connect()
-      }
-    }
-
-    this.deregister = (lynxNode, done) => {
-      delete node.users[lynxNode.id]
-
-      if (node.closing) return done()
-      if (Object.keys(node.users).length !== 0) return done()
-
-      if (node.client && node.client.connected) {
-        return node.client.end(done)
+    this.register = (id, lynxNode) => {
+      if (client && client.connected) {
+        lynxNode.status(INDICATOR_STATUS.CONNECTED)
+      } else if (connecting) {
+        lynxNode.status(INDICATOR_STATUS.CONNECTING)
       } else {
-        node.client.end()
-        return done()
+        lynxNode.status(INDICATOR_STATUS.DISCONNECTED)
+      }
+
+      if (Object.keys(users).length === 0) {
+        if (client) client.reconnect()
+        else connect()
+      }
+
+      users[id] = lynxNode
+    }
+
+    this.deregister = (id, done) => {
+      delete users[id]
+
+      if (!closing && client && Object.keys(users).length === 0) {
+        client.end(done)
+      } else {
+        if (done) done()
       }
     }
 
-    this.connect = () => {
-      if (node.connected || node.connecting) return
-      node.connecting = true
-
-      try {
-        node.client = mqtt.connect(node.broker, node.options)
-        node.client.setMaxListeners(0)
-
-        node.client.on('connect', () => {
-          node.connecting = false
-          node.connected = true
-          node.log(RED._('lynx.state.connected', { broker: node.options.clientID + '@' + node.broker }))
-
-          for (const id in node.users) {
-            node.users[id].status({
-              fill: 'green',
-              shape: 'dot',
-              text: 'node-red:common.status.connected'
-            })
-          }
-
-          node.client.removeAllListeners('message')
-
-          for (const s in node.subscriptions) {
-            const subscription = node.subscriptions[s]
-            const topic = s
-            const qos = 0
-
-            for (const r in subscription) {
-              node.client.on('message', subscription[r].handler)
-            }
-
-            const options = { qos }
-            node.client.subscribe(topic, options)
-          }
-        })
-
-        node.client.on('reconnect', () => {
-          for (const id in node.users) {
-            node.users[id].status({
-              fill: 'yellow',
-              shape: 'ring',
-              text: 'node-red:common.status.connecting'
-            })
-          }
-        })
-
-        node.client.on('close', () => {
-          if (node.connected) {
-            node.connected = false
-            node.log(RED._('lynx.state.disconnected', { broker: node.options.clientID + '@' + node.broker }))
-
-            for (const id in node.users) {
-              node.users[id].status({
-                fill: 'red',
-                shape: 'ring',
-                text: 'node-red:common.status.disconnected'
-              })
-            }
-          } else if (node.connecting) {
-            node.log(RED._('lynx.state.connect-failed', { broker: node.options.clientID + '@' + node.broker }))
-          }
-        })
-
-        node.client.on('error', (err) => {
-          console.error(err)
-        })
-      } catch (err) {
-        node.connecting = false
-        console.error(err)
+    this.subscribe = (topic, options, callback) => {
+      if (client && client.connected) {
+        client.subscribe(topic, options, callback)
+      } else {
+        queue.push({ topic, options, callback })
       }
     }
 
-    this.subscribe = (topic, qos, callback, ref) => {
-      ref = ref || 0
-      node.subscriptions[topic] = node.subscriptions[topic] || {}
-
-      const sub = {
-        topic,
-        qos,
-        ref,
-        handler: (mTopic, mPayload, mPacket) => {
-          if (matchTopic(topic, mTopic)) {
-            callback(mTopic, mPayload, mPacket)
-          }
-        }
-      }
-
-      node.subscriptions[topic][ref] = sub
-
-      if (node.connected) {
-        const options = { qos }
-        node.client.on('message', sub.handler)
-        node.client.subscribe(topic, options)
+    this.unsubscribe = (topic, options, callback) => {
+      if (client && client.connected) {
+        client.unsubscribe(topic, options, callback)
+      } else {
+        queue = queue.filter(q => q.topic !== topic)
       }
     }
 
-    this.unsubscribe = (topic, ref, removed) => {
-      ref = ref || 0
-      const sub = node.subscriptions[topic]
-      if (!sub) return
+    this.onMessage = (id, topic, listener) => {
+      if (!client || !client.connected) return
+      if (messageHandlers[id]) return node.error('Message handler already exists for ID:', id)
 
-      if (sub[ref]) {
-        node.client.removeListener('message', sub[ref].handler)
-        delete sub[ref]
-      }
+      const handler = createMessageHandler(topic, listener)
+      messageHandlers[id] = handler
 
-      if (!removed) return
-      if (Object.keys(sub).length !== 0) return
-      delete node.subscriptions[topic]
+      client.on('message', handler)
+    }
 
-      if (node.connected) {
-        node.client.unsubscribe(topic)
-      }
+    this.offMessage = (id, topic) => {
+      if (!client || !client.connected) return
+      if (!messageHandlers[id]) return
+
+      const handler = messageHandlers[id]
+      delete messageHandlers[id]
+
+      client.off('message', handler)
     }
 
     this.publish = (msg, done) => {
-      if (!node.connected) return
+      if (!client || !client.connected) return
 
       if (msg.payload === null || msg.payload === undefined) {
         msg.payload = ''
@@ -200,26 +128,109 @@ module.exports = function (RED) {
         retain: msg.retain || false
       }
 
-      node.client.publish(msg.topic, msg.payload, options, (err) => {
+      client.publish(msg.topic, msg.payload, options, (err) => {
         if (!done) return
         if (err) done(err)
         else done()
       })
     }
 
-    this.on('close', (done) => {
-      this.closing = true
+    function connect () {
+      if (connecting) return
+      if (client && client.connected) return
 
-      if (this.connected || this.connecting || node.client.reconnecting) {
-        this.client.end(() => {
-          this.closing = false
-          done()
+      try {
+        connecting = true
+        setIndicatorStatus('CONNECTING')
+
+        client = mqtt.connect(broker, options)
+        client.setMaxListeners(0)
+      } catch (err) {
+        connecting = false
+        node.error(err)
+        return
+      }
+
+      client.on('connect', (connack) => {
+        connecting = false
+        setIndicatorStatus('CONNECTED')
+        node.log(RED._('lynx.state.connected', { broker: options.clientID + '@' + broker }))
+      })
+
+      client.once('connect', (connack) => {
+        while (queue.length > 0) {
+          const sub = queue.shift()
+          client.subscribe(sub.topic, sub.options, sub.callback)
+        }
+      })
+
+      client.on('reconnect', () => {
+        node.log(RED._('lynx.state.reconnected', { broker: options.clientID + '@' + broker }))
+        setIndicatorStatus('CONNECTING')
+      })
+
+      client.on('close', () => {
+        connecting = false
+
+        if (!client) {
+          node.log(RED._('lynx.state.no-client', { broker: options.clientID + '@' + broker }))
+        } else if (client.connected) {
+          node.log(RED._('lynx.state.disconnected', { broker: options.clientID + '@' + broker }))
+        } else if (connecting) {
+          node.log(RED._('lynx.state.connect-failed', { broker: options.clientID + '@' + broker }))
+        }
+
+        setIndicatorStatus('DISCONNECTED')
+      })
+
+      client.on('end', () => {
+        node.log(RED._('lynx.state.end', { broker: options.clientID + '@' + broker }))
+      })
+
+      client.on('error', (err) => {
+        connecting = false
+        node.error(err)
+      })
+    }
+
+    this.on('close', (done) => {
+      if (client && (connecting || client.connected || client.reconnecting)) {
+        closing = true
+
+        client.end(() => {
+          connecting = false
+          closing = false
+          if (done) done()
         })
       } else {
-        this.closing = false
-        done()
+        connecting = false
+        if (done) done()
       }
     })
+
+    function setIndicatorStatus (status) {
+      const statusObj = INDICATOR_STATUS[status]
+
+      for (const id in users) {
+        const lynxNode = users[id]
+        lynxNode.status(statusObj)
+      }
+    }
+  }
+
+  function createMessageHandler (subTopic, callback) {
+    return (topic, payload, packet) => {
+      if (matchTopic(subTopic, topic)) callback(topic, payload, packet)
+    }
+  }
+
+  function matchTopic (sub, topic) {
+    if (sub === '#') {
+      return true
+    }
+
+    const re = new RegExp('^' + sub.replace(/([[\]?()\\\\$^*.|])/g, '\\$1').replace(/\+/g, '[^/]+').replace(/\/#$/, '(/.*)?') + '$')
+    return re.test(topic)
   }
 
   RED.nodes.registerType('lynx-server', LynxServerNode)
