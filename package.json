@@ -4,7 +4,9 @@
   "description": "NodeRED integration for IoT Open Lynx",
   "scripts": {
     "prepare": "babel nodes/ --out-dir lib && cp nodes/*.html lib/",
-    "debug": "babel nodes/ --out-dir lib && cp nodes/*.html lib/ && node-red"
+    "debug": "babel nodes/ --out-dir lib && cp nodes/*.html lib/ && node-red",
+    "start": "node-red",
+    "test": "standard"
   },
   "repository": {
     "type": "git",
@@ -37,6 +39,7 @@
   "devDependencies": {
     "@babel/cli": "7.12.10",
     "@babel/core": "7.12.10",
-    "@babel/preset-env": "7.12.11"
+    "@babel/preset-env": "7.12.11",
+    "standard": "^16.0.3"
   }
 }
