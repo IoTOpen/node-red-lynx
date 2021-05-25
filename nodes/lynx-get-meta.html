@@ -101,7 +101,7 @@
                 }
             });
 
-            $("select#node-input-installation_id").change(function () {
+            $("select#node-input-installation_id").change(function (e) {
                 if (!e.isTrigger) {
                     let val = $(this).val();
                     selectedInstallation = val ? parseInt(val) : node.installation_id;
@@ -111,7 +111,7 @@
                 }
             });
 
-            $("select#node-input-function_id").change(function () {
+            $("select#node-input-function_id").change(function (e) {
                 if (!e.isTrigger) {
                     let val = $(this).val();
                     selectedFunction = val ? parseInt(val) : node.function_id;
