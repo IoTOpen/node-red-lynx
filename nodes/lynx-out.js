@@ -1,7 +1,7 @@
 'use strict'
 
 module.exports = function (RED) {
-  function LynxInNode (config) {
+  function LynxOutNode (config) {
     RED.nodes.createNode(this, config)
     const node = this
     this.server = RED.nodes.getNode(config.server)
@@ -40,7 +40,7 @@ module.exports = function (RED) {
     })
   }
 
-  RED.nodes.registerType('lynx-out', LynxInNode)
+  RED.nodes.registerType('lynx-out', LynxOutNode)
 }
 
 function convertPayload (incoming) {

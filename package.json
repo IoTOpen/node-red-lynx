@@ -28,11 +28,12 @@
       "lynx-server": "./lib/lynx-server.js",
       "lynx-in": "./lib/lynx-in.js",
       "lynx-out": "./lib/lynx-out.js",
-      "lynx-get-meta": "./lib/lynx-get-meta.js"
+      "lynx-get-meta": "./lib/lynx-get-meta.js",
+      "lynx-get-status": "./lib/lynx-get-status.js"
     }
   },
   "dependencies": {
-    "@iotopen/node-lynx": "1.1.1",
+    "@iotopen/node-lynx": "^1.2.0",
     "mqtt": "4.2.6",
     "node-fetch": "2.6.1"
   },
