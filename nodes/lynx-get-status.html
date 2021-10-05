@@ -116,12 +116,10 @@
             }
 
             $("select#node-input-server").change(function (e) {
-                if (!e.isTrigger) {
-                    let val = $(this).val();
-                    selectedServer = RED.nodes.node(val ? val : node.server);
-                    if (selectedServer) {
-                        serverSelected();
-                    }
+                let val = $(this).val();
+                selectedServer = RED.nodes.node(val ? val : node.server);
+                if (selectedServer) {
+                    serverSelected();
                 }
             });
 
