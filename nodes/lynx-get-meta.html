@@ -53,6 +53,7 @@
             }
 
             let installationSelected = (installationId) => {
+                node.function_id = 0;
                 installations.map(installation => {
                     if (selectedInstallation === installation.id) {
                         node.installation_id = installation.id;
