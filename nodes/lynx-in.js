@@ -37,7 +37,7 @@ module.exports = function (RED) {
         topic,
         function_id: this.function_id,
         installation_id: this.installation_id,
-        lynx_server: config.server
+        lynx_server: this.server.id
       }
 
       node.send(out)
