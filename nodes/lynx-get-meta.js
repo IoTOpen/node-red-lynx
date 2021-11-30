@@ -45,6 +45,7 @@ module.exports = function (RED) {
                     msg.installation_id = this.installation_id
                     msg.client_id = this.client_id
                     msg.function_id = this.function_id
+                    msg.lynx_server = this.server.id
                     send(msg)
 
                     this.status({

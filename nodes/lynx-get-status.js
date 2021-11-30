@@ -48,7 +48,8 @@ module.exports = function (RED) {
                     },
                     installation_id: this.installation_id,
                     client_id: this.client_id,
-                    function_id: this.function_id
+                    function_id: this.function_id,
+                    lynx_server: this.server.id
                 }
 
                 send(msg)
