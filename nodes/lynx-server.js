@@ -248,4 +248,116 @@ module.exports = function (RED) {
       console.log(e)
     })
   })
+
+  RED.httpAdmin.get('/lynx/notification/outputs:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
+    const baseURL = req.query.url
+    const apiKey = req.query.apiKey
+    const installationId = req.params.installation_id
+    const cli = new lynx.LynxClient(baseURL, apiKey)
+
+    cli.getNotificationOutputs(installationId).then(json => {
+      res.json(json)
+    }).catch((e) => {
+      console.log(e)
+    })
+  })
+
+  RED.httpAdmin.get('/lynx/notification/executors:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
+    const baseURL = req.query.url
+    const apiKey = req.query.apiKey
+    const installationId = req.params.installation_id
+    const cli = new lynx.LynxClient(baseURL, apiKey)
+
+    cli.getNotificationOutputExecutors(installationId).then(json => {
+      res.json(json)
+    }).catch((e) => {
+      console.log(e)
+    })
+  })
+
+  RED.httpAdmin.get('/lynx/notification/messages:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
+    const baseURL = req.query.url
+    const apiKey = req.query.apiKey
+    const installationId = req.params.installation_id
+    const cli = new lynx.LynxClient(baseURL, apiKey)
+
+    cli.getNotificationMessages(installationId).then(json => {
+      res.json(json)
+    }).catch((e) => {
+      console.log(e)
+    })
+  })
+
+  RED.httpAdmin.post('/lynx/notification/message', RED.auth.needsPermission('lynx_server.read'), function (req, res) {
+    const baseURL = req.body.url
+    const apiKey = req.body.apiKey
+    const message = {
+      name: req.body.name, 
+      text: req.body.text,
+      installation_id: req.body.installation_id,
+    }
+    const cli = new lynx.LynxClient(baseURL, apiKey)
+    
+    cli.createNotificationMessage(message).then(json => {
+      res.json(json)
+    }).catch((e) => {
+      console.log(e)
+    })
+  })
+  
+  RED.httpAdmin.put('/lynx/notification/message', RED.auth.needsPermission('lynx_server.read'), function (req, res){
+    const baseURL = req.body.url
+    const apiKey = req.body.apiKey
+    const message = {
+      name: req.body.name,
+      text: req.body.text,
+      id: parseInt(req.body.id),
+      installation_id: parseInt(req.body.installation_id),
+    }
+    const cli = new lynx.LynxClient(baseURL, apiKey)
+    cli.updateNotificationMessage(message).then(json => {
+      res.json(json)
+    }).catch((e) => {
+      console.log(e)
+    })
+  })
+
+  RED.httpAdmin.put('/lynx/notification/output', RED.auth.needsPermission('lynx_server.read'), function(req, res, next){
+    const baseURL = req.body.url
+    const apiKey = req.body.apiKey
+    const output = {
+      id: parseInt(req.body.id),
+      name: req.body.name,
+      installation_id: parseInt(req.body.installation_id),
+      notification_output_executor_id: parseInt(req.body.executor_id),
+      notification_message_id: parseInt(req.body.message_id),
+      config: req.body.config
+    }
+    const cli = new lynx.LynxClient(baseURL, apiKey)
+
+    cli.updateNotificationOutput(output).then(json => {
+      res.json(json)
+    }).catch((e) => {
+      next(e)
+    })
+  })
+
+  RED.httpAdmin.post('/lynx/notification/output', RED.auth.needsPermission('lynx_server.read'), function(req, res, next){
+    const baseURL = req.body.url
+    const apiKey = req.body.apiKey
+    const output = {
+      name: req.body.name,
+      installation_id: parseInt(req.body.installation_id),
+      notification_output_executor_id: parseInt(req.body.executor_id),
+      notification_message_id: parseInt(req.body.message_id),
+      config: req.body.config
+    }
+    const cli = new lynx.LynxClient(baseURL, apiKey)
+    
+    cli.createNotificationOutput(output).then(json => {
+      res.json(json)
+    }).catch((e) => {
+      next(e)
+    })
+  })
 }

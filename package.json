@@ -29,11 +29,12 @@
       "lynx-in": "./lib/lynx-in.js",
       "lynx-out": "./lib/lynx-out.js",
       "lynx-get-meta": "./lib/lynx-get-meta.js",
-      "lynx-get-status": "./lib/lynx-get-status.js"
+      "lynx-get-status": "./lib/lynx-get-status.js",
+      "lynx-notification": "./lib/lynx-notification.js"
     }
   },
   "dependencies": {
-    "@iotopen/node-lynx": "^1.2.0",
+    "@iotopen/node-lynx": "^1.4.0",
     "mqtt": "4.2.8",
     "node-fetch": "2.6.2"
   },
