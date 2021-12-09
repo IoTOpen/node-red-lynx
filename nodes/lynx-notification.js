@@ -33,7 +33,7 @@ module.exports = function (RED) {
         this.status({
           fill: 'red',
           shape: 'dot',
-          text: 'node-red:common.status.error'
+          text: e
         })
         node.log(RED._('lynx.error', e))
         if (done) done(e)

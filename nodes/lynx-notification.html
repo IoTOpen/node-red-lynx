@@ -112,6 +112,7 @@
                 sortable: false
             });
             let serverSelected = () => {
+                let selectFirst = true;
                 node.server = selectedServer.id;
                 $.getJSON('lynx/installations', {
                     url: selectedServer.url,
@@ -121,11 +122,19 @@
                     select.empty();
                     if (Array.isArray(data)) {
                         installations = data;
-                        data.map(installation => {
+                        installations.map(installation => {
                             let selected = selectedInstallation === installation.id;
                             select.append(new Option(installation.name, installation.id, selected, selected));
+                            if (selected) {
+                                selectFirst = false;
+                                selectedInstallation = installation.id;
+                                installationSelected(selectedInstallation);
+                            }
                         });
-                        $("#node-input-installation_id").change();
+                        if (selectFirst && installations.length > 0) {
+                            selectedInstallation = installations[0].id;
+                            installationSelected(selectedInstallation);
+                        }
                     }
                 });
             }
@@ -136,6 +145,7 @@
                         node.installation_id = installation.id;
                     }
                 });
+                let selectFirst = true;
                 $.getJSON('/lynx/notification/outputs' + installationId, {
                     url: selectedServer.url,
                     apiKey: selectedServer.api_key,
@@ -148,8 +158,15 @@
                             outputs.map(output => {
                                 let selected = selectedOutput === output.id;
                                 select.append(new Option(output.name, output.id, selected, selected));
+                                if (selected) {
+                                    selectFirst = false;
+                                    outputSelected();
+                                }
                             });
-                            $("#node-input-output_id").change();
+                            if (selectFirst && outputs.length > 0) {
+                                selectedOutput = outputs[0].id;
+                                outputSelected();
+                            }
                         }
                     }
                 });
@@ -158,6 +175,7 @@
             let outputSelected = () => {
                 outputs.map(output => {
                     if (selectedOutput == output.id) {
+                        RED.nodes.dirty(node.output_id !== selectedOutput);
                         node.output_name = output.name;
                         node.output_id = output.id;
                         eList.empty();
@@ -184,8 +202,10 @@
                         executors.map(executor => {
                             let selected = selectedExecutor === executor.id;
                             select.append(new Option(executor.name, executor.id, selected, selected));
-                        });
-                        $("#node-input-executor_id").change();
+                            if (selected) {
+                                executorSelected();
+                            }
+                         });
                     }
                 });
                 $.getJSON('/lynx/notification/messages' + selectedInstallation, {
@@ -199,8 +219,10 @@
                         messages.map(message => {
                             let selected = selectedMessage === message.id;
                             select.append(new Option(message.name, message.id, selected, selected));
+                            if (selected) {
+                                messageSelected();
+                            }
                         });
-                        $("#node-input-message_id").change();
                     }
                 });
             }
@@ -224,39 +246,49 @@
             }
             
             $("select#node-input-server").change(function (e) {
-                let val = $(this).val();
-                selectedServer = RED.nodes.node(val ? val : node.server);
-                if (selectedServer) {
-                    serverSelected();
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedServer = RED.nodes.node(val ? val : node.server);
+                    if (selectedServer) {
+                        serverSelected();
+                    }
                 }
             });
 
             $("select#node-input-installation_id").change(function (e) {
-                let val = $(this).val();
-                selectedInstallation = val ? parseInt(val) : node.installation_id;
-                if (selectedServer) {
-                    installationSelected(selectedInstallation);
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedInstallation = val ? parseInt(val) : node.installation_id;
+                    if (selectedServer) {
+                        installationSelected(selectedInstallation);
+                    }
                 }
             });
 
             $("select#node-input-output_id").change(function (e) {
-                let val = $(this).val();
-                selectedOutput = val ? parseInt(val) : node.output_id;
-                if (selectedServer) {
-                    outputSelected(selectedInstallation);
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedOutput = val ? parseInt(val) : node.output_id;
+                    if (selectedServer) {
+                        outputSelected(selectedInstallation);
+                    }
                 }
             });
             
             $("select#node-input-message_id").change(function (e) {
-                let val = $(this).val();
-                selectedMessage = val ? parseInt(val) : node.message_id;
-                messageSelected();
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedMessage = val ? parseInt(val) : node.message_id;
+                    messageSelected();
+                }
             });  
 
             $("select#node-input-executor_id").change(function (e) {
-                let val = $(this).val();
-                selectedExecutor = val ? parseInt(val) : node.executor_id;
-                executorSelected();
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedExecutor = val ? parseInt(val) : node.executor_id;
+                    executorSelected();
+                }
             });
 
             $("#node-message-edit").click(function () {
@@ -334,7 +366,9 @@
                 $("#node-input-output_name").val("");
                 eList.empty()
             })
-            serverSelected();
+            if (selectedServer) {
+                serverSelected();
+            }
             sectionInit();
         },
     });

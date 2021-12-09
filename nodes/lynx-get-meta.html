@@ -30,6 +30,7 @@
             }
 
             let serverSelected = () => {
+                let selectFirst = true;
                 node.server = selectedServer.id;
 
                 $.getJSON('lynx/installations', {
@@ -40,26 +41,31 @@
                     select.empty();
                     if (Array.isArray(data)) {
                         installations = data;
-                        data.map(installation => {
-                            let selected = selectedInstallation === installation.id.toString();
+                        installations.map(installation => {
+                            let selected = selectedInstallation === installation.id;
                             select.append(new Option(installation.name, installation.id, selected, selected));
-                            if (selected || node.installation_id === 0) {
+                            if (selected) {
+                                selectFirst = false;
                                 selectedInstallation = installation.id;
                                 installationSelected(selectedInstallation);
                             }
                         });
+                        if (selectFirst && installations.length > 0) {
+                            selectedInstallation = installations[0].id;
+                            installationSelected(selectedInstallation);
+                        }
                     }
                 });
             }
 
             let installationSelected = (installationId) => {
-                node.function_id = 0;
                 installations.map(installation => {
                     if (selectedInstallation === installation.id) {
                         node.installation_id = installation.id;
                         node.client_id = installation.client_id;
                     }
                 });
+                let selectFirst = true;
                 $.getJSON('lynx/functions/' + selectedInstallation, {
                     url: selectedServer.url,
                     apiKey: selectedServer.api_key,
@@ -68,15 +74,22 @@
                         let select = $("select#node-input-function_id");
                         select.empty();
                         if (Array.isArray(data)) {
-                            functions = data;
+                            functions = data.sort((a,b) => {
+                                return a.meta.name.toLowerCase().localeCompare(b.meta.name.toLowerCase());
+                            });                            
                             functions.map(fun => {
                                 let selected = selectedFunction === fun.id;
                                 select.append(new Option(fun.meta.name, fun.id, selected, selected));
-                                if (selected || node.function_id === 0) {
+                                if (selected) {
+                                    selectFirst = false;
                                     selectedFunction = fun.id;
                                     functionSelected();
                                 }
                             });
+                            if (selectFirst && functions.length > 0) {
+                                selectedFunction = functions[0].id;
+                                functionSelected();
+                            }
                         }
                     }
                 });
@@ -86,6 +99,7 @@
             let functionSelected = () => {
                 functions.map(fun => {
                     if (fun.id === selectedFunction) {
+                        RED.nodes.dirty(node.function_id !== selectedFunction);
                         node.function_id = fun.id;
                         node.function_name = fun.meta.name;
                     }
@@ -93,10 +107,12 @@
             }
 
             $("select#node-input-server").change(function (e) {
-                let val = $(this).val();
-                selectedServer = RED.nodes.node(val ? val : node.server.id);
-                if (selectedServer) {
-                    serverSelected();
+                if (!e.isTrigger) {
+                    let val = $(this).val();
+                    selectedServer = RED.nodes.node(val ? val : node.server.id);
+                    if (selectedServer) {
+                        serverSelected();
+                    }
                 }
             });
 
@@ -130,6 +146,9 @@
                     $("#server-fields").show();
                 }
             });
+            if (selectedServer) {
+                serverSelected();
+            }
         },
     });
 </script>
