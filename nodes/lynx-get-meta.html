@@ -18,123 +18,22 @@
         },
         oneditprepare: function () {
             let node = this;
-            let functions = [];
-            let installations = [];
-            let selectedServer = RED.nodes.node(node.server.id ? node.server.id : node.server);
-            let selectedInstallation = node.installation_id;
-            let selectedFunction = node.function_id;
             let useMsg = node.use_msg;
+            const nodeGen = new NodeGenerics(this)
+
+            nodeGen.functionSelected = function() {
+                this.functions.map(fun => {
+                    if (fun.id === this.selectedFunction) {
+                        RED.nodes.dirty(this.node.function_id !== this.selectedFunction);
+                        this.node.function_id = fun.id;
+                        this.node.function_name = fun.meta.name;
+                    }
+                });
+            }
 
             if (useMsg) {
                 $("#server-fields").hide();
             }
-
-            let serverSelected = () => {
-                let selectFirst = true;
-                node.server = selectedServer.id;
-
-                $.getJSON('lynx/installations', {
-                    url: selectedServer.url,
-                    apiKey: selectedServer.api_key,
-                }, function (data) {
-                    let select = $("select#node-input-installation_id");
-                    select.empty();
-                    if (Array.isArray(data)) {
-                        installations = data;
-                        installations.map(installation => {
-                            let selected = selectedInstallation === installation.id;
-                            select.append(new Option(installation.name, installation.id, selected, selected));
-                            if (selected) {
-                                selectFirst = false;
-                                selectedInstallation = installation.id;
-                                installationSelected(selectedInstallation);
-                            }
-                        });
-                        if (selectFirst && installations.length > 0) {
-                            selectedInstallation = installations[0].id;
-                            installationSelected(selectedInstallation);
-                        }
-                    }
-                });
-            }
-
-            let installationSelected = (installationId) => {
-                installations.map(installation => {
-                    if (selectedInstallation === installation.id) {
-                        node.installation_id = installation.id;
-                        node.client_id = installation.client_id;
-                    }
-                });
-                let selectFirst = true;
-                $.getJSON('lynx/functions/' + selectedInstallation, {
-                    url: selectedServer.url,
-                    apiKey: selectedServer.api_key,
-                }, function (data) {
-                    if (selectedInstallation === installationId) {
-                        let select = $("select#node-input-function_id");
-                        select.empty();
-                        if (Array.isArray(data)) {
-                            functions = data.sort((a,b) => {
-                                return a.meta.name.toLowerCase().localeCompare(b.meta.name.toLowerCase());
-                            });                            
-                            functions.map(fun => {
-                                let selected = selectedFunction === fun.id;
-                                select.append(new Option(fun.meta.name, fun.id, selected, selected));
-                                if (selected) {
-                                    selectFirst = false;
-                                    selectedFunction = fun.id;
-                                    functionSelected();
-                                }
-                            });
-                            if (selectFirst && functions.length > 0) {
-                                selectedFunction = functions[0].id;
-                                functionSelected();
-                            }
-                        }
-                    }
-                });
-
-            }
-
-            let functionSelected = () => {
-                functions.map(fun => {
-                    if (fun.id === selectedFunction) {
-                        RED.nodes.dirty(node.function_id !== selectedFunction);
-                        node.function_id = fun.id;
-                        node.function_name = fun.meta.name;
-                    }
-                });
-            }
-
-            $("select#node-input-server").change(function (e) {
-                if (!e.isTrigger) {
-                    let val = $(this).val();
-                    selectedServer = RED.nodes.node(val ? val : node.server.id);
-                    if (selectedServer) {
-                        serverSelected();
-                    }
-                }
-            });
-
-            $("select#node-input-installation_id").change(function (e) {
-                if (!e.isTrigger) {
-                    let val = $(this).val();
-                    selectedInstallation = val ? parseInt(val) : node.installation_id;
-                    if (selectedServer) {
-                        installationSelected(selectedInstallation);
-                    }
-                }
-            });
-
-            $("select#node-input-function_id").change(function (e) {
-                if (!e.isTrigger) {
-                    let val = $(this).val();
-                    selectedFunction = val ? parseInt(val) : node.function_id;
-                    if (selectedServer) {
-                        functionSelected();
-                    }
-                }
-            });
 
             $("input#node-input-use_msg").change(function () {
                 useMsg = this.checked;
@@ -146,13 +45,14 @@
                     $("#server-fields").show();
                 }
             });
-            if (selectedServer) {
-                serverSelected();
+
+            if (nodeGen.selectedServer) {
+                nodeGen.serverSelected();
             }
         },
     });
 </script>
-
+<script src="resources/@iotopen/node-red-contrib-lynx/generics.js"></script>
 <script type="text/html" data-template-name="lynx-get-meta">
     <div class="form-row">
         <input id="node-input-use_msg" type="checkbox" style="width: 20px;vertical-align: top;margin-right: 5px">
