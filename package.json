@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@iotopen/node-lynx": "^1.4.0",
+    "@iotopen/node-lynx": "1.4.0",
     "mqtt": "4.2.8",
     "node-fetch": "2.6.2"
   },
