@@ -145,6 +145,40 @@
                         node.installation_id = installation.id;
                     }
                 });
+                $.getJSON('/lynx/notification/executors' + selectedInstallation, {
+                    url: selectedServer.url,
+                    apiKey: selectedServer.api_key,
+                }, function (data) {
+                    let select = $("select#node-input-executor_id");
+                    select.empty();
+                    if (Array.isArray(data)) {
+                        executors = data;
+                        executors.map(executor => {
+                            let selected = selectedExecutor === executor.id;
+                            select.append(new Option(executor.name, executor.id, selected, selected));
+                            if (selected) {
+                                selectedExecutor();
+                            }
+                        });
+                    }
+                });
+                $.getJSON('/lynx/notification/messages' + selectedInstallation, {
+                    url: selectedServer.url,
+                    apiKey: selectedServer.api_key,
+                }, function (data) {
+                    let select = $("select#node-input-message_id");
+                    select.empty();
+                    if (Array.isArray(data)) {
+                        messages = data;
+                        messages.map(message => {
+                            let selected = selectedMessage === message.id;
+                            select.append(new Option(message.name, message.id, selected, selected));
+                            if (selected) {
+                                selectedMessage();
+                            }
+                        });
+                    }
+                });
                 let selectFirst = true;
                 $.getJSON('/lynx/notification/outputs' + installationId, {
                     url: selectedServer.url,
@@ -171,7 +205,6 @@
                     }
                 });
             }
- 
             let outputSelected = () => {
                 outputs.map(output => {
                     if (selectedOutput == output.id) {
@@ -189,40 +222,8 @@
                         });
                         selectedExecutor = output.notification_output_executor_id;
                         selectedMessage = output.notification_message_id;
-                    }
-                });
-                $.getJSON('/lynx/notification/executors' + selectedInstallation, {
-                    url: selectedServer.url,
-                    apiKey: selectedServer.api_key,
-                }, function (data) {
-                    let select = $("select#node-input-executor_id");
-                    select.empty();
-                    if (Array.isArray(data)) {
-                        executors = data;
-                        executors.map(executor => {
-                            let selected = selectedExecutor === executor.id;
-                            select.append(new Option(executor.name, executor.id, selected, selected));
-                            if (selected) {
-                                executorSelected();
-                            }
-                         });
-                    }
-                });
-                $.getJSON('/lynx/notification/messages' + selectedInstallation, {
-                    url: selectedServer.url,
-                    apiKey: selectedServer.api_key,
-                }, function (data) {
-                    let select = $("select#node-input-message_id");
-                    select.empty();
-                    if (Array.isArray(data)) {
-                        messages = data;
-                        messages.map(message => {
-                            let selected = selectedMessage === message.id;
-                            select.append(new Option(message.name, message.id, selected, selected));
-                            if (selected) {
-                                messageSelected();
-                            }
-                        });
+                        messageSelected();
+                        executorSelected();
                     }
                 });
             }
