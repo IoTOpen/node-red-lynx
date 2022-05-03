@@ -1,6 +1,6 @@
 {
   "name": "@iotopen/node-red-contrib-lynx",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "NodeRED integration for IoT Open Lynx",
   "scripts": {
     "prepare": "babel nodes/ --out-dir lib && cp nodes/*.html lib/",
@@ -34,13 +34,15 @@
     }
   },
   "dependencies": {
-    "@iotopen/node-lynx": "1.4.0",
+    "@babel/runtime": "^7.17.9",
+    "@iotopen/node-lynx": "^1.4.3",
     "mqtt": "4.2.8",
     "node-fetch": "2.6.2"
   },
   "devDependencies": {
     "@babel/cli": "7.12.10",
     "@babel/core": "7.12.10",
+    "@babel/plugin-transform-regenerator": "^7.17.9",
     "@babel/preset-env": "7.12.11",
     "standard": "^16.0.4"
   }
