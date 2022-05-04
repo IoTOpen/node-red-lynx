@@ -33,7 +33,7 @@
             }
             let config = getConfig() 
             if (node.output_id !== 0) {
-                $.ajax({url: '/lynx/notification/output', 
+                $.ajax({url: 'lynx/notification/output', 
                     type: "PUT",
                     data: {
                         url: selectedServer.url,
@@ -145,7 +145,7 @@
                         node.installation_id = installation.id;
                     }
                 });
-                $.getJSON('/lynx/notification/executors' + selectedInstallation, {
+                $.getJSON('lynx/notification/executors' + selectedInstallation, {
                     url: selectedServer.url,
                     apiKey: selectedServer.api_key,
                 }, function (data) {
@@ -162,7 +162,7 @@
                         });
                     }
                 });
-                $.getJSON('/lynx/notification/messages' + selectedInstallation, {
+                $.getJSON('lynx/notification/messages' + selectedInstallation, {
                     url: selectedServer.url,
                     apiKey: selectedServer.api_key,
                 }, function (data) {
@@ -180,7 +180,7 @@
                     }
                 });
                 let selectFirst = true;
-                $.getJSON('/lynx/notification/outputs' + installationId, {
+                $.getJSON('lynx/notification/outputs' + installationId, {
                     url: selectedServer.url,
                     apiKey: selectedServer.api_key,
                 }, function (data) {
