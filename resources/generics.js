@@ -9,7 +9,7 @@ class NodeGenerics {
         this.selectedInstallation = node.installation_id;
         this.selectedFunction = node.function_id;
         let $this = this;
-    
+
         $("select#node-input-server").change(function (e) {
             if (!e.isTrigger) {
                 let val = $(this).val();
@@ -105,7 +105,7 @@ class NodeGenerics {
                 if (Array.isArray(data)) {
                     lynx.functions = data.sort((a,b) => {
                         return a.meta.name.toLowerCase().localeCompare(b.meta.name.toLowerCase());
-                    });                            
+                    });
                     lynx.functions.map(fun => {
                         let selected = lynx.selectedFunction === fun.id;
                         select.append(new Option(fun.meta.name, fun.id, selected, selected));
@@ -123,7 +123,7 @@ class NodeGenerics {
             }
         });
     }
-    
+
     serverSelected() {
         let selectFirst = true;
         this.node.server = this.selectedServer.id;
@@ -153,5 +153,4 @@ class NodeGenerics {
             }
         });
     }
-    
 }

@@ -1,12 +1,12 @@
 <script type="text/javascript">
     RED.nodes.registerType('lynx-in', {
-        category: 'IoT Open',
-        color: "#12b1be",
-        defaults: {
+        category: 'IoT Open', color: "#12b1be", defaults: {
             server: {value: "", type: "lynx-server"},
+            use_meta_filter: {value: false, required: true},
             installation_id: {value: 0, required: true},
             function_id: {value: 0, required: true},
             function_name: {value: ""},
+            filter: {value: []},
             topic: {value: ""},
             client_id: {value: 0},
         },
@@ -14,15 +14,133 @@
         outputs: 1,
         icon: "lynx-in.png",
         label: function () {
-            return this.function_name || "lynx-in"
+            return !this.use_meta_filter && this.function_name || "lynx-in"
+        },
+        oneditsave: function () {
+            const node = this;
+            const getMetaFilter = () => {
+                let metaItems = $("#meta-filter").editableList('items');
+                let res = [];
+                metaItems.each(function (i, elem) {
+                    let propName = elem.find(".meta-filter-config-key").val()
+                    let propValue = elem.find(".meta-filter-config-value").val()
+                    res.push({key: propName, value: propValue})
+                });
+                return res
+            };
+
+            if (node.use_meta_filter) {
+                node.filter = getMetaFilter();
+            }
         },
         oneditprepare: function () {
-            let node = this;
-            const nodeGen = new NodeGenerics(node)
+            const node = this;
+            const nodeGen = new NodeGenerics(this);
+            let useMetaFilter = node.use_meta_filter;
+
+            const renderFunctionList = functions => {
+                let rows = functions.map((f) => {
+                    let row = $("<tr/>");
+                    let id = $("<td/>").appendTo(row);
+                    let name = $("<td/>").appendTo(row);
+                    id.text(f.id);
+                    name.text(f.meta.name);
+                    return row;
+                });
+                $("#matched_functions_body").empty().append(rows);
+            };
 
             if (nodeGen.selectedServer) {
                 nodeGen.serverSelected();
             }
+
+            if (!useMetaFilter) {
+                $("#selector-fields").hide();
+                $("#meta-filter-fields").show();
+                node.use_meta_filter = true;
+            } else {
+                $("#selector-fields").show();
+                $("#meta-filter-fields").hide();
+                node.use_meta_filter = false;
+            }
+            $("input#node-input-use_meta_filter").change(function () {
+                useMetaFilter = this.checked;
+                node.use_meta_filter = useMetaFilter;
+
+                if (useMetaFilter) {
+                    $("#selector-fields").hide();
+                    $("#meta-filter-fields").show();
+                    node.function_name = undefined;
+                    node.function_id = undefined;
+                    node.topic = undefined;
+                } else {
+                    $("#selector-fields").show();
+                    $("#meta-filter-fields").hide();
+                }
+            });
+
+
+            let eList = $('#meta-filter');
+            eList.editableList({
+                addItem: function (container, index, data) {
+                    container.css({
+                        overflow: 'hidden', whiteSpace: 'nowrap'
+                    });
+                    let row = $('<div/>').appendTo(container);
+                    let filterKey = $('<input/>', {class: 'meta-filter-config-key', type: 'text'})
+                        .css({
+                            width: '40%'
+                        })
+                        .appendTo(row);
+                    $('<div/>', {style: 'display:inline-block; padding:0px 6px;'}).text('=').appendTo(row);
+                    let filterValue = $('<input/>', {class: 'meta-filter-config-value', type: 'text'})
+                        .css({
+                            width: '40%'
+                        })
+                        .appendTo(row);
+                    filterKey.val(data.key);
+                    filterValue.val(data.value);
+                    filterValue.change(() => {
+                        let filter = {};
+                        let items = eList.editableList('items');
+                        items.map((i, elem) => {
+                            let propName = elem.find(".meta-filter-config-key").val()
+                            filter[propName] = elem.find(".meta-filter-config-value").val()
+                        });
+                        $.getJSON('lynx/functions/' + nodeGen.selectedInstallation, {
+                            url: nodeGen.selectedServer.url, apiKey: nodeGen.selectedServer.api_key, filter: filter
+                        }, (data) => {
+                            renderFunctionList(data);
+                        });
+                    });
+                },
+                removeItem: function (data) {
+                    let filter = {};
+                    let items = eList.editableList('items');
+                    items.map((i, elem) => {
+                        let propName = elem.find(".meta-filter-config-key").val()
+                        filter[propName] = elem.find(".meta-filter-config-value").val()
+                    });
+                    $.getJSON('lynx/functions/' + nodeGen.selectedInstallation, {
+                        url: nodeGen.selectedServer.url, apiKey: nodeGen.selectedServer.api_key, filter: filter
+                    }, (data) => {
+                        renderFunctionList(data);
+                    });
+                },
+                removable: true,
+                sortable: false
+            });
+            eList.editableList('addItems', node.filter);
+
+            let filter = {};
+            node.filter.forEach(f => {
+                filter[f.key] = f.value;
+            });
+            $.getJSON('lynx/functions/' + nodeGen.selectedInstallation, {
+                url: nodeGen.selectedServer.url, apiKey: nodeGen.selectedServer.api_key, filter: filter
+            }, (data) => {
+                renderFunctionList(data);
+            });
         },
     });
 </script>
@@ -38,22 +156,46 @@
         </select>
     </div>
     <div class="form-row">
-        <label for="node-input-function_id"><i class="icon-tag"></i> Function</label>
-        <select id="node-input-function_id">
-        </select>
+        <input id="node-input-use_meta_filter" type="checkbox"
+               style="width: 20px;vertical-align: top;margin-right: 5px">
+        <label for="node-input-use_meta_filter" style="width: auto"> Use Meta Filter</label>
     </div>
-    <div class="form-row">
-        <label for="node-input-type"><i class="icon-tag"></i> Topic</label>
-        <span id="node-input-type" class="button-group"></span>
+    <div id="selector-fields">
+        <div class="form-row">
+            <label for="node-input-function_id"><i class="icon-tag"></i> Function</label>
+            <select id="node-input-function_id">
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="node-input-type"><i class="icon-tag"></i> Topic</label>
+            <span id="node-input-type" class="button-group"></span>
+        </div>
+    </div>
+    <div id="meta-filter-fields">
+        <ol id="meta-filter" style="min-width: 250px; min-height: 240px;"></ol>
+        <div>
+            <label>Matched functions:</label>
+            <table style="width: 100%">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                </tr>
+                </thead>
+                <tbody id="matched_functions_body">
+                </tbody>
+            </table>
+        </div>
     </div>
 </script>
 
 <script type="text/html" data-help-name="lynx-in">
     <p>
-        A node for receiving data from a function on a Lynx server. In the
-        properties: server, installation, function and what topic to get data
-        from is set. The data from that function is then sent from the node
-        when it arrives.
+        A node for receiving data from one or several functions on a Lynx
+        server. In the properties: server, use-meta-filter, installation,
+        function and what topic to get data from is set.
+        Either data from the selected function is received or data for all
+        functions matching the filter.
     </p>
     <h3>
         Output
