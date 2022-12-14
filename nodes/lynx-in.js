@@ -83,7 +83,7 @@ module.exports = function (RED) {
                 out.function_id = fun.id;
                 out.function = fun;
             } else {
-                out.function_id = this.functions_id
+                out.function_id = this.function_id
             }
             node.send(out)
         };
