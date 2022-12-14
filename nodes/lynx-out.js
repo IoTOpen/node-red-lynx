@@ -23,7 +23,7 @@ module.exports = function (RED) {
       msg.topic = this.client_id + '/' + this.topic
 
       this.server.publish(msg, done)
-    })
+    });
 
     if (this.server.connected) {
       this.status({

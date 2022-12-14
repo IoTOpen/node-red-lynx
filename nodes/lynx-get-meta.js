@@ -42,10 +42,12 @@ module.exports = function (RED) {
             cli.getFunction(node.installation_id, node.function_id).then(json => {
                 if (json.meta) {
                     msg.meta = json.meta
-                    msg.installation_id = this.installation_id
-                    msg.client_id = this.client_id
-                    msg.function_id = this.function_id
-                    msg.lynx_server = this.server.id
+                    if (!this.use_msg) {
+                        msg.installation_id = this.installation_id
+                        msg.client_id = this.client_id
+                        msg.function_id = this.function_id
+                        msg.lynx_server = this.server.id
+                    }
                     send(msg)
 
                     this.status({
