@@ -1,5 +1,6 @@
+'use strict'
+
 module.exports = function (RED) {
-  'use strict'
   const lynx = require('@iotopen/node-lynx')
   const mqtt = require('mqtt')
 
