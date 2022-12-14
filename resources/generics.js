@@ -8,6 +8,7 @@ class NodeGenerics {
         this.selectedServer = RED.nodes.node(node.server.id ? node.server.id : node.server);
         this.selectedInstallation = node.installation_id;
         this.selectedFunction = node.function_id;
+        this.selectedTopic = node.topic;
         let $this = this;
 
         $("select#node-input-server").change(function (e) {
@@ -80,8 +81,9 @@ class NodeGenerics {
             $(".type-button-group").removeClass("selected");
             $(this).addClass("selected");
             let val = $(this).val()
-            RED.nodes.dirty(lynx.node.topic !== val)
+            RED.nodes.dirty(lynx.selectedTopic !== val);
             lynx.node.topic = val;
+            lynx.selectedTopic = val;
         });
         return btn[0];
     }
