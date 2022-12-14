@@ -39,18 +39,17 @@ module.exports = function (RED) {
                     shape: 'dot',
                     text: 'success'
                 })
-                let status = statuses[0]
-                let msg = {
-                    payload: {
-                        value: status.value,
-                        timestamp: status.timestamp,
-                        msg: status.msg
-                    },
-                    installation_id: this.installation_id,
-                    client_id: this.client_id,
-                    function_id: this.function_id,
-                    lynx_server: this.server.id
+                let status = statuses[0];
+                msg.original_payload = msg.payload;
+                msg.payload = {
+                    value: status.value,
+                    timestamp: status.timestamp,
+                    msg: status.msg
                 }
+                msg.installation_id = this.installation_id;
+                msg.client_id = this.client_id;
+                msg.function_id = this.function_id;
+                msg.lynx_server = this.server.id;
 
                 send(msg)
                 if (done) done()
