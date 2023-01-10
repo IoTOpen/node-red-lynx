@@ -1,5 +1,8 @@
 'use strict'
 
+const fetch = require('node-fetch');
+globalThis.fetch = fetch;
+
 module.exports = function (RED) {
   const lynx = require('@iotopen/node-lynx')
   const mqtt = require('mqtt')

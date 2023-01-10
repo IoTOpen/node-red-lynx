@@ -31,9 +31,9 @@
                 });
                 return res
             }
-            let config = getConfig() 
+            let config = getConfig()
             if (node.output_id !== 0) {
-                $.ajax({url: 'lynx/notification/output', 
+                $.ajax({url: 'lynx/notification/output',
                     type: "PUT",
                     data: {
                         url: selectedServer.url,
@@ -208,7 +208,6 @@
             let outputSelected = () => {
                 outputs.map(output => {
                     if (selectedOutput == output.id) {
-                        RED.nodes.dirty(node.output_id !== selectedOutput);
                         node.output_name = output.name;
                         node.output_id = output.id;
                         eList.empty();
@@ -227,7 +226,7 @@
                     }
                 });
             }
-            
+
             let messageSelected = () => {
                 messages.map(message => {
                     if (selectedMessage === message.id) {
@@ -245,7 +244,7 @@
                     }
                 });
             }
-            
+
             $("select#node-input-server").change(function (e) {
                 if (!e.isTrigger) {
                     let val = $(this).val();
@@ -275,14 +274,14 @@
                     }
                 }
             });
-            
+
             $("select#node-input-message_id").change(function (e) {
                 if (!e.isTrigger) {
                     let val = $(this).val();
                     selectedMessage = val ? parseInt(val) : node.message_id;
                     messageSelected();
                 }
-            });  
+            });
 
             $("select#node-input-executor_id").change(function (e) {
                 if (!e.isTrigger) {
@@ -331,7 +330,7 @@
                         select.append(new Option(data.name, data.id, true, true));
                     });
                 } else if(selectedMessage !== 0) {
-                    $.ajax({url: 'lynx/notification/message', 
+                    $.ajax({url: 'lynx/notification/message',
                         type: "PUT",
                         data: {
                             url: selectedServer.url,
@@ -353,7 +352,7 @@
                 $(".content-message").hide();
                 $(".content-props").show();
             });
-            
+
             $("#node-output-create").click(function () {
                 selectedOutput = 0;
                 node.output_id = 0;
@@ -417,7 +416,7 @@
                  </div>
              </div>
          </div>
-       
+
     </div>
     <div class="content-message" style="display: none;" >
         <div class="red-ui-tray-toolbar">
@@ -438,8 +437,8 @@
 <script type="text/html" data-help-name="lynx-notification">
     <p>
         A node for sending notifications using the lynx platform.
-        More information about configuring notifications can be found 
-        <a href="https://lynx.iotopen.se/tech/docs/notifications/">here.</a> 
+        More information about configuring notifications can be found
+        <a href="https://lynx.iotopen.se/tech/docs/notifications/">here.</a>
     </p>
     <h3>Input</h3>
     <p>

@@ -13,17 +13,22 @@
         inputs: 1,
         outputs: 0,
         icon: 'lynx-out.png',
+        nodeGen: undefined,
         label: function () {
             return this.function_name || 'lynx-out';
         },
+        oneditsave: function () {
+            this.function_id = this.nodeGen.selectedFunction.id;
+            this.function_name = this.nodeGen.selectedFunction.meta.name;
+            this.topic = this.nodeGen.selectedTopic;
+            this.installation_id = this.nodeGen.selectedInstallation.id;
+            this.client_id = this.nodeGen.selectedInstallation.client_id;
+        },
         oneditprepare: function () {
-            let node = this;
-            console.log('main node', node)
-            const nodeGen = new NodeGenerics(node);
+            this.nodeGen = new NodeGenerics(this);
 
-            if (nodeGen.selectedServer) {
-                console.log('init server selected');
-                nodeGen.serverSelected();
+            if (this.nodeGen.selectedServer) {
+                this.nodeGen.serverSelected();
             }
         },
     });
