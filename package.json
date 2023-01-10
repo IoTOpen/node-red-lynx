@@ -44,6 +44,9 @@
     "@babel/core": "7.12.10",
     "@babel/plugin-transform-regenerator": "^7.20.5",
     "@babel/preset-env": "7.12.11",
+    "@node-red/editor-api": "^3.0.2",
+    "@node-red/editor-client": "^3.0.2",
+    "@types/jquery": "^3.5.14",
     "standard": "^16.0.4"
   }
 }

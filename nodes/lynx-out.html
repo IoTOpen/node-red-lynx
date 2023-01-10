@@ -1,30 +1,37 @@
 <script type="text/javascript">
-  RED.nodes.registerType('lynx-out', {
-    category: 'IoT Open',
-    color: '#12b1be',
-    defaults: {
-      server: { value: '', type: 'lynx-server' },
-      installation_id: { value: 0, required: true },
-      function_id: { value: 0, required: true },
-      function_name: { value: '' },
-      topic: { value: '' },
-      client_id: { value: 0 },
-    },
-    inputs: 1,
-    outputs: 0,
-    icon: 'lynx-out.png',
-    label: function () {
-      return this.function_name || 'lynx-out'
-    },
-    oneditprepare: function () {
-      let node = this
-      const nodeGen = new NodeGenerics(node)
+    RED.nodes.registerType('lynx-out', {
+        category: 'IoT Open',
+        color: '#12b1be',
+        defaults: {
+            server: { value: '', type: 'lynx-server' },
+            installation_id: { value: 0, required: true },
+            function_id: { value: 0, required: true },
+            function_name: { value: '' },
+            topic: { value: '' },
+            client_id: { value: 0 },
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: 'lynx-out.png',
+        nodeGen: undefined,
+        label: function () {
+            return this.function_name || 'lynx-out';
+        },
+        oneditsave: function () {
+            this.function_id = this.nodeGen.selectedFunction.id;
+            this.function_name = this.nodeGen.selectedFunction.meta.name;
+            this.topic = this.nodeGen.selectedTopic;
+            this.installation_id = this.nodeGen.selectedInstallation.id;
+            this.client_id = this.nodeGen.selectedInstallation.client_id;
+        },
+        oneditprepare: function () {
+            this.nodeGen = new NodeGenerics(this);
 
-      if (nodeGen.selectedServer) {
-        nodeGen.serverSelected()
-      }
-    },
-  })
+            if (this.nodeGen.selectedServer) {
+                this.nodeGen.serverSelected();
+            }
+        },
+    });
 </script>
 <script type="text/html" data-template-name="lynx-out">
     <div class="form-row">

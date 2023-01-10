@@ -14,40 +14,48 @@
         outputs: 1,
         icon: "lynx-get-meta.png",
         label: function () {
-            return this.function_name || "lynx-get-meta"
+            return this.function_name ? `MetaOf ${this.function_name}` : "lynx-get-meta";
         },
-        oneditprepare: function () {
-            let node = this;
-            let useMsg = node.use_msg;
-            const nodeGen = new NodeGenerics(this)
 
-            nodeGen.functionSelected = function() {
-                this.functions.map(fun => {
-                    if (fun.id === this.selectedFunction) {
-                        RED.nodes.dirty(this.node.function_id !== this.selectedFunction);
-                        this.node.function_id = fun.id;
-                        this.node.function_name = fun.meta.name;
-                    }
-                });
+        nodeGen: undefined,
+        useMsg: false,
+        oneditsave: function() {
+            this.use_msg = this.useMsg;
+            if(this.useMsg) {
+                this.server = undefined;
+                this.installation_id = undefined;
+                this.function_id = undefined;
+                this.client_id = undefined;
+                this.function_name = undefined;
+            } else {
+                this.installation_id = this.nodeGen.selectedInstallation.id;
+                this.function_id = this.nodeGen.selectedFunction.id;
+                this.client_id = this.nodeGen.selectedInstallation.client_id;
+                this.function_name = this.nodeGen.selectedFunction.meta.name;
+                this.server = this.nodeGen.selectedServer;
             }
+        },
 
-            if (useMsg) {
+        oneditprepare: function () {
+            this.useMsg = this.use_msg;
+            this.nodeGen = new NodeGenerics(this)
+
+            if (this.useMsg) {
                 $("#server-fields").hide();
             }
 
-            $("input#node-input-use_msg").change(function () {
-                useMsg = this.checked;
-                node.use_msg = useMsg;
+            $("input#node-input-use_msg").on('change', function (e) {
+                this.useMsg = e.target.checked;
 
-                if (useMsg) {
+                if (this.useMsg) {
                     $("#server-fields").hide();
                 } else {
                     $("#server-fields").show();
                 }
-            });
+            }.bind(this));
 
-            if (nodeGen.selectedServer) {
-                nodeGen.serverSelected();
+            if (this.server) {
+                this.nodeGen.serverSelected();
             }
         },
     });

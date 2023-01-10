@@ -16,8 +16,15 @@
         label: function () {
             return !this.use_meta_filter && this.function_name || "lynx-in"
         },
+        nodeGen: undefined,
+        useMetaFilter: false,
         oneditsave: function () {
-            const node = this;
+            this.function_id = this.nodeGen.selectedFunction.id;
+            this.function_name = this.nodeGen.selectedFunction.meta.name;
+            this.topic = this.nodeGen.selectedTopic;
+            this.installation_id = this.nodeGen.selectedInstallation.id;
+            this.client_id = this.nodeGen.selectedInstallation.client_id;
+            this.use_meta_filter = this.useMetaFilter;
             const getMetaFilter = () => {
                 let metaItems = $("#meta-filter").editableList('items');
                 let res = [];
@@ -29,14 +36,16 @@
                 return res
             };
 
-            if (node.use_meta_filter) {
-                node.filter = getMetaFilter();
+            if (this.useMetaFilter) {
+                this.function_id = undefined;
+                this.function_name = undefined;
+                this.topic = undefined;
+                this.filter = getMetaFilter();
             }
         },
         oneditprepare: function () {
-            const node = this;
-            const nodeGen = new NodeGenerics(this);
-            let useMetaFilter = node.use_meta_filter;
+            this.nodeGen = new NodeGenerics(this);
+            this.useMetaFilter = this.use_meta_filter;
 
             const renderFunctionList = functions => {
                 let rows = functions.map((f) => {
@@ -50,34 +59,27 @@
                 $("#matched_functions_body").empty().append(rows);
             };
 
-            if (nodeGen.selectedServer) {
-                nodeGen.serverSelected();
+            if (this.nodeGen.selectedServer) {
+                this.nodeGen.serverSelected();
             }
 
-            if (!useMetaFilter) {
+            if (this.useMetaFilter) {
                 $("#selector-fields").hide();
                 $("#meta-filter-fields").show();
-                node.use_meta_filter = true;
             } else {
                 $("#selector-fields").show();
                 $("#meta-filter-fields").hide();
-                node.use_meta_filter = false;
             }
-            $("input#node-input-use_meta_filter").change(function () {
-                useMetaFilter = this.checked;
-                node.use_meta_filter = useMetaFilter;
-
-                if (useMetaFilter) {
+            $("input#node-input-use_meta_filter").on('change', function (e) {
+                this.useMetaFilter = e.target.checked;
+                if (this.useMetaFilter) {
                     $("#selector-fields").hide();
                     $("#meta-filter-fields").show();
-                    node.function_name = undefined;
-                    node.function_id = undefined;
-                    node.topic = undefined;
                 } else {
                     $("#selector-fields").show();
                     $("#meta-filter-fields").hide();
                 }
-            });
+            }.bind(this));
 
 
             let eList = $('#meta-filter');
@@ -100,44 +102,44 @@
                         .appendTo(row);
                     filterKey.val(data.key);
                     filterValue.val(data.value);
-                    filterValue.change(() => {
+                    filterValue.on('change', function() {
                         let filter = {};
                         let items = eList.editableList('items');
                         items.map((i, elem) => {
                             let propName = elem.find(".meta-filter-config-key").val()
                             filter[propName] = elem.find(".meta-filter-config-value").val()
                         });
-                        $.getJSON('lynx/functions/' + nodeGen.selectedInstallation, {
-                            url: nodeGen.selectedServer.url, apiKey: nodeGen.selectedServer.api_key, filter: filter
+                        $.getJSON(`lynx/functions/${this.nodeGen.selectedInstallation.id}`, {
+                            url: this.nodeGen.selectedServer.url, apiKey: this.nodeGen.selectedServer.api_key, filter: filter
                         }, (data) => {
                             renderFunctionList(data);
                         });
-                    });
-                },
-                removeItem: function (data) {
+                    }.bind(this));
+                }.bind(this),
+                removeItem: function () {
                     let filter = {};
                     let items = eList.editableList('items');
                     items.map((i, elem) => {
                         let propName = elem.find(".meta-filter-config-key").val()
                         filter[propName] = elem.find(".meta-filter-config-value").val()
                     });
-                    $.getJSON('lynx/functions/' + nodeGen.selectedInstallation, {
-                        url: nodeGen.selectedServer.url, apiKey: nodeGen.selectedServer.api_key, filter: filter
+                    $.getJSON(`lynx/functions/${this.nodeGen.selectedInstallation.id}`, {
+                        url: this.nodeGen.selectedServer.url, apiKey: this.nodeGen.selectedServer.api_key, filter: filter
                     }, (data) => {
                         renderFunctionList(data);
                     });
-                },
+                }.bind(this),
                 removable: true,
                 sortable: false
             });
-            eList.editableList('addItems', node.filter);
+            eList.editableList('addItems', this.filter);
 
             let filter = {};
-            node.filter.forEach(f => {
+            this.filter.forEach(f => {
                 filter[f.key] = f.value;
             });
-            $.getJSON('lynx/functions/' + nodeGen.selectedInstallation, {
-                url: nodeGen.selectedServer.url, apiKey: nodeGen.selectedServer.api_key, filter: filter
+            $.getJSON(`lynx/functions/${this.nodeGen.selectedInstallation?.id ?? this.installation_id}`, {
+                url: this.nodeGen.selectedServer.url, apiKey: this.nodeGen.selectedServer.api_key, filter: filter
             }, (data) => {
                 renderFunctionList(data);
             });

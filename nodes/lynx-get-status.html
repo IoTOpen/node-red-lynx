@@ -13,15 +13,21 @@
         inputs: 1,
         outputs: 1,
         icon: "lynx-status.png",
+        nodeGen: undefined,
         label: function () {
             return this.function_name || "lynx-status"
         },
+        oneditsave: function() {
+            this.function_id = this.nodeGen.selectedFunction.id;
+            this.function_name = this.nodeGen.selectedFunction.meta.name;
+            this.topic = this.nodeGen.selectedTopic;
+            this.installation_id = this.nodeGen.selectedInstallation.id;
+            this.client_id = this.nodeGen.selectedInstallation.client_id;
+        },
         oneditprepare: function () {
-            let node = this;
-            const nodeGen = new NodeGenerics(node)
-
-            if (nodeGen.selectedServer) {
-                nodeGen.serverSelected();
+            this.nodeGen = new NodeGenerics(this);
+            if (this.nodeGen.selectedServer) {
+                this.nodeGen.serverSelected();
             }
         },
     });
