@@ -1,30 +1,32 @@
 <script type="text/javascript">
-  RED.nodes.registerType('lynx-out', {
-    category: 'IoT Open',
-    color: '#12b1be',
-    defaults: {
-      server: { value: '', type: 'lynx-server' },
-      installation_id: { value: 0, required: true },
-      function_id: { value: 0, required: true },
-      function_name: { value: '' },
-      topic: { value: '' },
-      client_id: { value: 0 },
-    },
-    inputs: 1,
-    outputs: 0,
-    icon: 'lynx-out.png',
-    label: function () {
-      return this.function_name || 'lynx-out'
-    },
-    oneditprepare: function () {
-      let node = this
-      const nodeGen = new NodeGenerics(node)
+    RED.nodes.registerType('lynx-out', {
+        category: 'IoT Open',
+        color: '#12b1be',
+        defaults: {
+            server: { value: '', type: 'lynx-server' },
+            installation_id: { value: 0, required: true },
+            function_id: { value: 0, required: true },
+            function_name: { value: '' },
+            topic: { value: '' },
+            client_id: { value: 0 },
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: 'lynx-out.png',
+        label: function () {
+            return this.function_name || 'lynx-out';
+        },
+        oneditprepare: function () {
+            let node = this;
+            console.log('main node', node)
+            const nodeGen = new NodeGenerics(node);
 
-      if (nodeGen.selectedServer) {
-        nodeGen.serverSelected()
-      }
-    },
-  })
+            if (nodeGen.selectedServer) {
+                console.log('init server selected');
+                nodeGen.serverSelected();
+            }
+        },
+    });
 </script>
 <script type="text/html" data-template-name="lynx-out">
     <div class="form-row">

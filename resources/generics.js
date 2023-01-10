@@ -1,158 +1,176 @@
-'user strict'
+'use strict';
 
 class NodeGenerics {
-    constructor(node) {
+    constructor (node) {
         this.node = node;
         this.functions = [];
         this.installations = [];
-        this.selectedServer = RED.nodes.node(node.server.id ? node.server.id : node.server);
+        this.selectedServer = RED.nodes.node(node.server.id ?? node.server);
         this.selectedInstallation = node.installation_id;
         this.selectedFunction = node.function_id;
-        this.selectedTopic = node.topic;
-        let $this = this;
+        let _this = this;
 
-        $("select#node-input-server").change(function (e) {
+        $('select#node-input-server').on('change', function (e) {
             if (!e.isTrigger) {
-                let val = $(this).val();
-                $this.selectedServer = RED.nodes.node(val ? val : $this.node.server.id);
-                if ($this.selectedServer) {
-                    $this.serverSelected();
+                _this.selectedServer = RED.nodes.node(e.target.value ?? _this.node.server.id);
+                if (_this.selectedServer) {
+                    _this.serverSelected();
                 }
             }
         });
 
-        $("select#node-input-installation_id").change(function (e) {
-            if (!e.isTrigger) {
-                let val = $(this).val();
-                $this.selectedInstallation = val ? parseInt(val) : $this.node.installation_id;
-                if ($this.selectedServer) {
-                    $this.installationSelected($this.selectedInstallation);
-                }
-            }
-        });
-
-        $("select#node-input-function_id").change(function (e) {
-            if (!e.isTrigger) {
-                let val = $(this).val();
-                $this.selectedFunction = val ? parseInt(val) : $this.node.function_id;
-                if ($this.selectedServer) {
-                    $this.functionSelected();
-                }
-            }
-        });
-    }
-
-    functionSelected = () => {
-        this.functions.map(fun => {
-            if (fun.id === this.selectedFunction) {
-                RED.nodes.dirty(this.node.function_id !== this.selectedFunction);
-                this.node.function_id = fun.id;
-                this.node.function_name = fun.meta.name;
-                let inputType = $("#node-input-type");
-                inputType.empty();
-
-                let selectFirst = true;
-                for (let key in fun.meta) {
-                    if (fun.meta.hasOwnProperty(key) && key.startsWith("topic_")) {
-                        let topicButton = this.getTopicButton(key, fun.meta[key]);
-                        inputType.append(topicButton);
-                        if (fun.meta[key] === this.node.topic) {
-                            selectFirst = false;
-                            topicButton.click();
-                        }
-                    }
-                }
-                if (selectFirst) {
-                    let btns = $("#node-input-type").children(":button");
-                    if (btns.length > 0) btns[0].click();
-                }
-            }
-        });
-    }
-
-    getTopicButton = (metaKey, metaValue) => {
-        let lynx = this;
-        let metaType = metaKey.substring(metaKey.indexOf('_') + 1, metaKey.length);
-        let btn = $('<button type="button" id="type-' + metaType + '" value="' + metaValue + '" class="red-ui-button toggle type-button-group">' + metaType + '<button/>');
-        if (lynx.node.topic === metaValue) {
-            btn.addClass("selected");
-        }
-        btn.click(function () {
-            $(".type-button-group").removeClass("selected");
-            $(this).addClass("selected");
-            let val = $(this).val()
-            RED.nodes.dirty(lynx.selectedTopic !== val);
-            lynx.node.topic = val;
-            lynx.selectedTopic = val;
-        });
-        return btn[0];
-    }
-
-    installationSelected(installationId) {
-        this.installations.map(installation => {
-            if (this.selectedInstallation === installation.id) {
-                this.node.installation_id = installation.id;
-                this.node.client_id = installation.client_id;
-            }
-        });
-        let selectFirst = true;
-        let lynx = this;
-        $.getJSON('lynx/functions/' + this.selectedInstallation, {
-            url: this.selectedServer.url,
-            apiKey: this.selectedServer.api_key,
-        }, function (data) {
-            if (lynx.selectedInstallation === installationId) {
-                let select = $("select#node-input-function_id");
-                select.empty();
-                if (Array.isArray(data)) {
-                    lynx.functions = data.sort((a,b) => {
-                        return a.meta.name.toLowerCase().localeCompare(b.meta.name.toLowerCase());
-                    });
-                    lynx.functions.map(fun => {
-                        let selected = lynx.selectedFunction === fun.id;
-                        select.append(new Option(fun.meta.name, fun.id, selected, selected));
-                        if (selected) {
-                            selectFirst = false;
-                            lynx.selectedFunction = fun.id;
-                            lynx.functionSelected();
-                        }
-                    });
-                    if (selectFirst && lynx.functions.length > 0) {
-                        lynx.selectedFunction = lynx.functions[0].id;
-                        lynx.functionSelected();
-                    }
-                }
-            }
-        });
-    }
-
-    serverSelected() {
-        let selectFirst = true;
-        this.node.server = this.selectedServer.id;
-        let lynx = this;
-
-        $.getJSON('lynx/installations', {
-            url: this.selectedServer.url,
-            apiKey: this.selectedServer.api_key,
-        }, function (data) {
-            let select = $("select#node-input-installation_id");
-            select.empty();
-            if (Array.isArray(data)) {
-                lynx.installations = data;
-                lynx.installations.map(installation => {
-                    let selected = lynx.selectedInstallation === installation.id;
-                    select.append(new Option(installation.name, installation.id, selected, selected));
-                    if (selected) {
-                        selectFirst = false;
-                        lynx.selectedInstallation = installation.id;
-                        lynx.installationSelected(lynx.selectedInstallation);
+        $('select#node-input-installation_id').on('change', function (e) {
+            let val = e.target.value;
+            if (!e.isTrigger && _this.installations !== undefined) {
+                _this.installations.forEach(inst => {
+                    let id = val ? parseInt(val) : _this.node.installation_id;
+                    if (inst.id === id) {
+                        _this.selectedInstallation = inst;
                     }
                 });
-                if (selectFirst && lynx.installations.length > 0) {
-                    lynx.selectedInstallation = lynx.installations[0].id;
-                    lynx.installationSelected(lynx.selectedInstallation);
+                if (_this.selectedServer) {
+                    _this.installationSelected();
                 }
             }
         });
-    }
+
+        $('select#node-input-function_id').on('change', function (e) {
+            let val = e.target.value;
+            if (!e.isTrigger && _this.functions !== undefined) {
+                _this.functions.forEach(fun => {
+                    let id = val ? parseInt(val) : _this.node.function_id;
+                    if (fun.id === id) {
+                        _this.selectedFunction = fun;
+                    }
+                });
+                if (_this.selectedServer) {
+                    _this.functionSelected();
+                }
+            }
+        });
+    };
+
+    functionSelected = () => {
+        let _this = this;
+        let inputType = $('#node-input-type');
+
+        if (_this.node.function_id !== _this.selectedFunction.id) {
+            console.log('function was different');
+            _this.node.function_id = _this.selectedFunction.id;
+            _this.node.function_name = _this.selectedFunction.meta.name;
+        }
+
+        inputType.empty();
+
+        let shouldSelectFirst = true;
+        let btns = Object.keys(_this.selectedFunction.meta)
+            .filter(key => key.startsWith('topic_'))
+            .map(key => {
+                let val = _this.selectedFunction.meta[key];
+                let metaType = key.substring(key.indexOf('_') + 1);
+                let topicButton = _this.getTopicButton(metaType, val);
+                if (val === _this.node.topic) {
+                    shouldSelectFirst = false;
+                    console.log('function clicked topic');
+                    topicButton.click();
+                }
+                return topicButton;
+            });
+        inputType.append(btns);
+
+        if (shouldSelectFirst) {
+            console.log('function selected first topic');
+            let btns = inputType.children();
+            if (btns.length > 0) btns[0].click();
+        }
+    };
+
+    getTopicButton = (metaType, metaValue) => {
+        let _this = this;
+        let btn = $('<button type="button" id="type-' + metaType + '" value="' + metaValue + '" class="red-ui-button toggle type-button-group">' + metaType + '<button/>');
+
+        if (_this.node.topic === metaValue) {
+            btn.addClass('selected');
+        }
+        btn.on('click', (e) => {
+            $('.type-button-group').removeClass('selected');
+            btn.addClass('selected');
+            _this.node.topic = metaValue;
+        });
+        return btn[0];
+    };
+
+    installationSelected () {
+        let _this = this;
+        let select = $('select#node-input-function_id');
+
+        if (_this.node.installation_id !== _this.selectedInstallation.id) {
+            console.log('installation was different');
+            _this.node.installation_id = _this.selectedInstallation.id;
+            _this.node.client_id = _this.selectedInstallation.client_id;
+        }
+
+        $.getJSON('lynx/functions/' + _this.selectedInstallation.id, {
+            url: _this.selectedServer.url,
+            apiKey: _this.selectedServer.api_key,
+        }, function (data) {
+            select.empty();
+            if (Array.isArray(data)) {
+                let shouldSelectFirst = true;
+                _this.functions = data.sort((a, b) => {
+                    let aVal = a?.meta?.name ?? '';
+                    let bVal = b?.meta?.name ?? '';
+                    return aVal.toLowerCase().localeCompare(bVal.toLowerCase());
+                });
+                let opts = _this.functions.map(fun => {
+                    let selected = _this.node.function_id === fun.id;
+                    if (selected) {
+                        shouldSelectFirst = false;
+                        _this.selectedFunction = fun;
+                    }
+                    return new Option(fun.meta.name, fun.id, selected, selected);
+                });
+                if (shouldSelectFirst && _this.functions.length > 0) {
+                    console.log('selected first function');
+                    _this.selectedFunction = _this.functions[0];
+                }
+                select.append(opts);
+                console.log('installation selected function');
+                _this.functionSelected();
+            }
+        });
+    };
+
+    serverSelected () {
+        let _this = this;
+        let select = $('select#node-input-installation_id');
+        this.node.server = this.selectedServer.id;
+
+        $.getJSON('lynx/installations', {
+            url: _this.selectedServer.url,
+            apiKey: _this.selectedServer.api_key,
+        }, function (data) {
+            select.empty();
+            if (Array.isArray(data)) {
+                let shouldSelectFirst = true;
+                _this.installations = data;
+                let opts = _this.installations.map(installation => {
+                    let selected = _this.node.installation_id === installation.id;
+                    if (selected) {
+                        shouldSelectFirst = false;
+                        _this.selectedInstallation = installation;
+                    }
+                    return new Option(installation.name, installation.id, selected, selected);
+                });
+
+                if (shouldSelectFirst && _this.installations.length > 0) {
+                    console.log('first-installation');
+                    _this.selectedInstallation = _this.installations[0];
+                }
+                select.append(opts);
+                console.log('server selected installation');
+                _this.installationSelected();
+            }
+        });
+    };
 }
