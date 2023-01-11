@@ -11,11 +11,9 @@ class NodeGenerics {
         this.selectedTopic = undefined;
 
         $('select#node-input-server').on('change', function (e) {
-            if (!e.isTrigger) {
-                this.selectedServer = RED.nodes.node(e.target.value ?? this.node.server.id);
-                if (this.selectedServer) {
-                    this.serverSelected();
-                }
+            this.selectedServer = RED.nodes.node(e.target.value ?? this.node.server.id);
+            if (this.selectedServer) {
+                this.serverSelected();
             }
         }.bind(this));
 

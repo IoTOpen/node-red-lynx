@@ -2,17 +2,22 @@
     RED.nodes.registerType('lynx-server', {
         category: 'config',
         defaults: {
+            name: {value: "", required: false},
             url: {value: "", required: true},
             api_key: {value: "", required: true},
             broker_url: {value: "", required: true},
         },
         label: function()  {
-            return this.url;
+            return this.name ? this.name : this.url;
         }
     });
 </script>
 
 <script type="text/html" data-template-name="lynx-server">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="icon-bookmark"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Server Name">
+    </div>
     <div class="form-row">
         <label for="node-config-input-url"><i class="icon-bookmark"></i> URL</label>
         <input type="text" id="node-config-input-url" placeholder="https://lynx.domain.tld">
