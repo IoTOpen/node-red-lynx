@@ -7,19 +7,24 @@
             installation_id: { value: 0, required: true },
             output_id: { value: 0, required: true },
             output_name: { value: '', },
+            message_id: { value: 0, },
+            executor_id: { value: 0, },
         },
         inputs: 1,
         outputs: 0,
         icon: 'lynx-notification.png',
-
         selectedServer: undefined,
         selectedInstallation: undefined,
         selectedOutput: undefined,
         selectedExecutor: undefined,
         selectedMessage: undefined,
+        executors: [],
+        messages: [],
+        installations: [],
 
         label: function () {
-            return this.output_name || 'lynx-notification';
+            console.log(this.output_name);
+            return 'lynx-notification';
         },
         oneditsave: function () {
             let output = $('#node-input-output_name').val();
@@ -34,43 +39,58 @@
                 return res;
             };
             let config = getConfig();
+            console.log("Server:", this.server, this.selectedServer.id);
+            console.log("Installation:", this.installation_id, this.selectedInstallation);
+            console.log("OutputID:", this.output_id, this.selectedOutput);
+            console.log("OutputName:", this.output_name, output);
+            console.log("MessageID:",this.message_id, this.selectedMessage);
+            console.log("ExecutorID:", this.executor_id, this.selectedExecutor);
+
+            this.server = this.selectedServer.id;
+            this.installation_id = this.selectedInstallation;
+            this.output_id = this.selectedOutput;
+            this.output_name = output;
+            this.message_id = this.selectedMessage;
+            this.executor_id = this.selectedExecutor;
             if (this.selectedOutput !== 0) {
-                $.put('lynx/notification/output', {
+                $.ajax({
+                    url: 'lynx/notification/output',
+                    type: 'PUT',
+                    data: {
+                        url: this.selectedServer.url,
+                        apiKey: this.selectedServer.api_key,
+                        id: this.output_id,
+                        name: this.output_name,
+                        installation_id: this.installation_id,
+                        executor_id: this.executor_id,
+                        message_id: this.message_id,
+                        config: config,
+                    }
+                });
+            } else {
+                $.post('lynx/notification/output', {
                     url: this.selectedServer.url,
                     apiKey: this.selectedServer.api_key,
-                    id: this.output_id,
-                    name: output,
+                    name: this.output_name,
                     installation_id: this.installation_id,
                     executor_id: this.executor_id,
                     message_id: this.message_id,
                     config: config,
                 });
             }
-            $.post('lynx/notification/output', {
-                url: this.selectedServer.url,
-                apiKey: this.selectedServer.api_key,
-                name: output,
-                installation_id: this.installation_id,
-                executor_id: this.executor_id,
-                message_id: this.message_id,
-                config: config,
-            });
-            this.server = this.selectedServer;
-            this.installation_id = this.selectedInstallation;
-            this.output_id = this.selectedOutput;
-            this.output_name = this.output;
         },
 
         oneditprepare: function () {
-            let outputs = [];
-            let executors = [];
-            let messages = [];
-            let installations = [];
+            this.outputs = [];
+            this.executors = [];
+            this.messages = [];
+            this.installations = [];
+            console.log("Prepare, server:", this.server);
             this.selectedServer = RED.nodes.node(this.server);
             this.selectedInstallation = this.installation_id;
             this.selectedOutput = this.output_id;
-
-
+            this.selectedMessage = this.message_id;
+            this.selectedExecutor = this.executor_id;
 
             let sectionInit = () => {
                 let section = $('#node-section-output');
@@ -99,13 +119,13 @@
                         overflow: 'hidden',
                         whiteSpace: 'nowrap'
                     });
-                    let row = $('<div/>').appendTo(container);
-                    let propertyName = $('<input/>', {
+                    let row = $('<div>').appendTo(container);
+                    let propertyName = $('<input>', {
                         class: 'node-input-config-property-name',
                         type: 'text'
                     }).css('width', '30%').appendTo(row);
-                    $('<div/>', { style: 'display:inline-block; padding:0px 6px;' }).text('=').appendTo(row);
-                    let propertyValue = $('<input/>', {
+                    $('<div>', { style: 'display:inline-block; padding:0px 6px;' }).text('=').appendTo(row);
+                    let propertyValue = $('<input>', {
                         class: 'node-input-config-property-value',
                         type: 'text'
                     }).css('width', 'calc(70% - 30px)').appendTo(row);
@@ -120,11 +140,11 @@
                 $.getJSON('lynx/installations', {
                     url: this.selectedServer.url,
                     apiKey: this.selectedServer.api_key,
-                }, function (data) {
+                }, function (installations) {
                     let select = $('select#node-input-installation_id');
                     select.empty();
-                    if (Array.isArray(data)) {
-                        installations = data;
+                    if (Array.isArray(installations)) {
+                        this.installations = installations;
                         installations.map(installation => {
                             let selected = this.selectedInstallation === installation.id;
                             select.append(new Option(installation.name, installation.id, selected, selected));
@@ -143,21 +163,19 @@
             };
 
             let installationSelected = (installationId) => {
-                installations.map(installation => {
-                    if (this.selectedInstallation.toString() === installation.id.toString()) {
-                        // TODO: PLACEHOLDER
-                    }
-                });
+                console.log('installationId', installationId, isNaN(installationId));
+                if (isNaN(installationId)) return;
                 $.getJSON(`lynx/notification/executors/${installationId}`, {
                     url: this.selectedServer.url,
                     apiKey: this.selectedServer.api_key,
-                }, function (data) {
+                }, function (executors) {
                     let select = $('select#node-input-executor_id');
                     select.empty();
-                    if (Array.isArray(data)) {
-                        executors = data;
+                    if (Array.isArray(executors)) {
+                        this.executors = executors;
                         executors.map(executor => {
                             let selected = this.selectedExecutor === executor.id;
+                            console.log(selected, this.selectedExecutor, executor.id);
                             select.append(new Option(executor.name, executor.id, selected, selected));
                             if (selected) {
                                 executorSelected();
@@ -168,11 +186,11 @@
                 $.getJSON(`lynx/notification/messages/${installationId}`, {
                     url: this.selectedServer.url,
                     apiKey: this.selectedServer.api_key,
-                }, function (data) {
+                }, function (messages) {
                     let select = $('select#node-input-message_id');
                     select.empty();
-                    if (Array.isArray(data)) {
-                        messages = data;
+                    if (Array.isArray(messages)) {
+                        this.messages = messages;
                         messages.map(message => {
                             let selected = this.selectedMessage === message.id;
                             select.append(new Option(message.name, message.id, selected, selected));
@@ -182,33 +200,35 @@
                         });
                     }
                 }.bind(this));
-                let selectFirst = true;
                 $.getJSON(`lynx/notification/outputs/${installationId}`, {
                     url: this.selectedServer.url,
                     apiKey: this.selectedServer.api_key,
                 }, function (outputs) {
+                    let selectFirst = true;
                     if (this.selectedInstallation === installationId) {
                         let select = $('select#node-input-output_id');
                         select.empty();
                         if (Array.isArray(outputs)) {
+                            this.outputs = outputs;
                             outputs.map(output => {
                                 let selected = this.selectedOutput === output.id;
                                 select.append(new Option(output.name, output.id, selected, selected));
                                 if (selected) {
                                     selectFirst = false;
-                                    outputSelected();
+                                    this.selectedOutput = output.id;
                                 }
                             });
                             if (selectFirst && outputs.length > 0) {
                                 this.selectedOutput = outputs[0].id;
-                                outputSelected();
                             }
+                            outputSelected();
                         }
                     }
                 }.bind(this));
             };
             let outputSelected = () => {
-                outputs.map(output => {
+                this.outputs.map(output => {
+                    console.log(this.selectedOutput, output.id, 'OUTPUT', output.name, this.selectedOutput === output.id);
                     if (this.selectedOutput === output.id) {
                         eList.empty();
                         $('#node-input-output_name').val(output.name);
@@ -228,10 +248,9 @@
             };
 
             let messageSelected = () => {
-                messages.map(message => {
+                this.messages.map(message => {
                     if (this.selectedMessage === message.id) {
-                        //TODO: PLACEHOLDER
-                        //node.message_id = message.id;
+                        $('#node-input-message_id').val(message.id);
                         $('#node-input-message_name').val(message.name);
                         $('#node-input-message_text').val(message.text);
                     }
@@ -239,8 +258,9 @@
             };
 
             let executorSelected = () => {
-                executors.map(executor => {
+                this.executors.map(executor => {
                     if (this.selectedExecutor === executor.id) {
+                        $('#node-input-executor_id').val(String(this.selectedExecutor));
                     }
                 });
             };
@@ -254,6 +274,7 @@
             }.bind(this));
 
             $('select#node-input-installation_id').on('change', function (e) {
+                if (isNaN(parseInt(e.target.value))) return;
                 this.selectedInstallation = parseInt(e.target.value);
                 if (this.selectedServer) {
                     installationSelected(this.selectedInstallation);
@@ -262,7 +283,8 @@
 
             $('select#node-input-output_id').on('change', function (e) {
                 let val = e.target.value;
-                this.selectedOutput = parseInt(val) ?? this.output_id;
+                if (isNaN(parseInt(val))) return;
+                this.selectedOutput = parseInt(val);
                 if (this.selectedServer) {
                     outputSelected(this.selectedInstallation);
                 }
@@ -270,13 +292,15 @@
 
             $('select#node-input-message_id').on('change', function (e) {
                 let val = e.target.value;
-                this.selectedMessage = val ? parseInt(val) : this.message_id;
+                if (isNaN(parseInt(val))) return;
+                this.selectedMessage = parseInt(val);
                 messageSelected();
             }.bind(this));
 
             $('select#node-input-executor_id').on('change', function (e) {
                 let val = e.target.value;
-                this.selectedExecutor = val ? parseInt(val) : this.executor_id;
+                if (isNaN(parseInt(val))) return;
+                this.selectedExecutor = parseInt(val);
                 executorSelected();
             }.bind(this));
 
@@ -312,11 +336,12 @@
                         name: name,
                         text: text,
                         installation_id: this.selectedInstallation,
-                    }).done(function (data) {
-                        this.selectedMessage = data.id;
-                        messages.push(data);
+                    }).done(function (message) {
+                        this.selectedMessage = message.id;
+                        this.messages.push(message);
                         let select = $('select#node-input-message_id');
-                        select.append(new Option(data.name, data.id, true, true));
+                        select.append(new Option(message.name, message.id, true, true));
+                        messageSelected();
                     }.bind(this));
                 } else if (this.selectedMessage !== 0) {
                     $.ajax({
@@ -330,13 +355,8 @@
                             text: text,
                             installation_id: this.selectedInstallation,
                         },
-                        success: function (data) {
-                            // ??????
-                            //messages.map(message => {
-                            //    if (message.id == data.id) {
-                            //        message = data;
-                            //    }
-                            //});
+                        success: function () {
+                            messageSelected();
                         }.bind(this)
                     });
                 }
@@ -413,8 +433,9 @@
     </div>
     <div class="content-message" style="display: none;">
         <div class="red-ui-tray-toolbar">
-            <button id="node-message-edit-return" type="button" class="red-ui-button leftButton"><i
-                    class="fa fa-arrow-left"></i></button>
+            <button id="node-message-edit-return" type="button" class="red-ui-button leftButton">
+                <i class="fa fa-arrow-left"></i>
+            </button>
             <button id="node-message-edit-save" type="button" class="red-ui-button ui-corner-all"> Save</button>
         </div>
         <div class="form-row">
@@ -436,6 +457,6 @@
     </p>
     <h3>Input</h3>
     <p>
-        The input takes any object wich will be sent to the platforms notification-output.
+        The input takes any object which will be sent to the platforms notification-output.
     </p>
 </script>
