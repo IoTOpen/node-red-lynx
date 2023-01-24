@@ -23,8 +23,7 @@
         installations: [],
 
         label: function () {
-            console.log(this.output_name);
-            return 'lynx-notification';
+            return this.output_name || 'lynx-notification';
         },
         oneditsave: function () {
             let output = $('#node-input-output_name').val();
@@ -39,13 +38,6 @@
                 return res;
             };
             let config = getConfig();
-            console.log("Server:", this.server, this.selectedServer.id);
-            console.log("Installation:", this.installation_id, this.selectedInstallation);
-            console.log("OutputID:", this.output_id, this.selectedOutput);
-            console.log("OutputName:", this.output_name, output);
-            console.log("MessageID:",this.message_id, this.selectedMessage);
-            console.log("ExecutorID:", this.executor_id, this.selectedExecutor);
-
             this.server = this.selectedServer.id;
             this.installation_id = this.selectedInstallation;
             this.output_id = this.selectedOutput;
@@ -81,11 +73,10 @@
         },
 
         oneditprepare: function () {
-            this.outputs = [];
+            this.lynxOutputs = [];
             this.executors = [];
             this.messages = [];
             this.installations = [];
-            console.log("Prepare, server:", this.server);
             this.selectedServer = RED.nodes.node(this.server);
             this.selectedInstallation = this.installation_id;
             this.selectedOutput = this.output_id;
@@ -163,7 +154,6 @@
             };
 
             let installationSelected = (installationId) => {
-                console.log('installationId', installationId, isNaN(installationId));
                 if (isNaN(installationId)) return;
                 $.getJSON(`lynx/notification/executors/${installationId}`, {
                     url: this.selectedServer.url,
@@ -175,7 +165,6 @@
                         this.executors = executors;
                         executors.map(executor => {
                             let selected = this.selectedExecutor === executor.id;
-                            console.log(selected, this.selectedExecutor, executor.id);
                             select.append(new Option(executor.name, executor.id, selected, selected));
                             if (selected) {
                                 executorSelected();
@@ -209,7 +198,7 @@
                         let select = $('select#node-input-output_id');
                         select.empty();
                         if (Array.isArray(outputs)) {
-                            this.outputs = outputs;
+                            this.lynxOutputs = outputs;
                             outputs.map(output => {
                                 let selected = this.selectedOutput === output.id;
                                 select.append(new Option(output.name, output.id, selected, selected));
@@ -227,8 +216,7 @@
                 }.bind(this));
             };
             let outputSelected = () => {
-                this.outputs.map(output => {
-                    console.log(this.selectedOutput, output.id, 'OUTPUT', output.name, this.selectedOutput === output.id);
+                this.lynxOutputs.map(output => {
                     if (this.selectedOutput === output.id) {
                         eList.empty();
                         $('#node-input-output_name').val(output.name);
@@ -366,12 +354,6 @@
 
             $('#node-output-create').on('click', function () {
                 this.selectedOutput = 0;
-                //TODO: ????
-                //outputs.map(output => {
-                //    if (this.selectedOutput === output.id) {
-                //        return;
-                //    }
-                //});
                 let select = $('select#node-input-output_id');
                 select.append(new Option('New output', 0, true, true));
                 $('#node-input-output_name').val('New output');
