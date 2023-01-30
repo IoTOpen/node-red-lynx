@@ -1,8 +1,5 @@
 'use strict'
 
-const fetch = require('node-fetch');
-globalThis.fetch = fetch;
-
 module.exports = function (RED) {
   const lynx = require('@iotopen/node-lynx')
   const mqtt = require('mqtt')
@@ -254,7 +251,7 @@ module.exports = function (RED) {
     });
   });
 
-  RED.httpAdmin.get('/lynx/notification/outputs:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
+  RED.httpAdmin.get('/lynx/notification/outputs/:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
     const baseURL = req.query.url
     const apiKey = req.query.apiKey
     const installationId = req.params.installation_id
@@ -267,7 +264,7 @@ module.exports = function (RED) {
     })
   })
 
-  RED.httpAdmin.get('/lynx/notification/executors:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
+  RED.httpAdmin.get('/lynx/notification/executors/:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
     const baseURL = req.query.url
     const apiKey = req.query.apiKey
     const installationId = req.params.installation_id
@@ -280,7 +277,7 @@ module.exports = function (RED) {
     })
   })
 
-  RED.httpAdmin.get('/lynx/notification/messages:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
+  RED.httpAdmin.get('/lynx/notification/messages/:installation_id',RED.auth.needsPermission('lynx_server.read'), function (req, res){
     const baseURL = req.query.url
     const apiKey = req.query.apiKey
     const installationId = req.params.installation_id
