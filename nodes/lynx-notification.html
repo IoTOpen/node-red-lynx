@@ -9,6 +9,7 @@
             output_name: { value: '', },
             message_id: { value: 0, },
             executor_id: { value: 0, },
+            label: { value: ''},
         },
         inputs: 1,
         outputs: 0,
@@ -23,7 +24,13 @@
         installations: [],
 
         label: function () {
-            return this.output_name || 'lynx-notification';
+            if(this.label) {
+                return this.label;
+            }
+            if(this.output_name){
+                return this.output_name;
+            }
+            return 'lynx-notification';
         },
         oneditsave: function () {
             let output = $('#node-input-output_name').val();
@@ -369,6 +376,10 @@
 
 <script type="text/html" data-template-name="lynx-notification">
     <div class="content-props">
+        <div class="form-row">
+            <label for="node-input-label"><i class="fa fa-tag"></i> Label</label>
+            <input type="text" id="node-input-label"/>
+        </div>
         <div class="form-row">
             <label for="node-input-server"><i class="icon-bookmark"></i> Server</label>
             <input type="text" id="node-input-server">
