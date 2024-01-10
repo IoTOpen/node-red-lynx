@@ -9,12 +9,17 @@
             filter: {value: []},
             topic: {value: ""},
             client_id: {value: 0},
+            label: {value: ""},
         },
         inputs: 0,
         outputs: 1,
         icon: "lynx-in.png",
         label: function () {
-            return !this.use_meta_filter && this.function_name || "lynx-in"
+            if(this.label) return this.label;
+            if(!this.use_meta_filter && this.function_name){
+                return !this.use_meta_filter && this.function_name 
+            }
+            return "lynx-in";
         },
         nodeGen: undefined,
         useMetaFilter: false,
@@ -149,8 +154,12 @@
 
 <script type="text/html" data-template-name="lynx-in">
     <div class="form-row">
+        <label for="node-input-label"><i class="fa fa-tag"></i> Label</label>
+        <input type="text" id="node-input-label"/>
+    </div>
+    <div class="form-row">
         <label for="node-input-server"><i class="icon-bookmark"></i> Server</label>
-        <input type="text" id="node-input-server">
+        <input type="text" id="node-input-server"/>
     </div>
     <div class="form-row">
         <label for="node-input-installation_id"><i class="icon-tag"></i> Installation</label>

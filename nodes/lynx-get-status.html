@@ -9,13 +9,20 @@
             function_name: {value: ""},
             topic: {value: ""},
             client_id: {value: 0},
+            label: {value: ""},
         },
         inputs: 1,
         outputs: 1,
         icon: "lynx-status.png",
         nodeGen: undefined,
         label: function () {
-            return this.function_name || "lynx-status"
+            if(this.label) {
+                return this.label;
+            }
+            if(this.function_name) {
+                return this.function_name;
+            }
+            return "lynx-status";
         },
         oneditsave: function() {
             this.function_id = this.nodeGen.selectedFunction.id;
@@ -34,6 +41,10 @@
 </script>
 
 <script type="text/html" data-template-name="lynx-get-status">
+    <div class="form-row">
+        <label for="node-input-label"><i class="fa fa-tag"></i> Label</label>
+        <input type="text" id="node-input-label"/>
+    </div>
     <div class="form-row">
         <label for="node-input-server"><i class="icon-bookmark"></i> Server</label>
         <input type="text" id="node-input-server">

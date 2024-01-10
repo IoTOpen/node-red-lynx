@@ -9,12 +9,19 @@
             function_id: {value: 0, required: true},
             client_id: {value: 0},
             function_name: {value: ""},
+            label: {value: ""},
         },
         inputs: 1,
         outputs: 1,
         icon: "lynx-get-meta.png",
         label: function () {
-            return this.function_name ? `MetaOf ${this.function_name}` : "lynx-get-meta";
+            if(this.label){
+                return this.label;
+            }
+            if(this.function_name){
+                return `Meta of ${this.function_name}`;
+            }
+            return "lynx-get-meta";
         },
 
         nodeGen: undefined,
@@ -62,6 +69,10 @@
 </script>
 <script src="resources/@iotopen/node-red-contrib-lynx/generics.js"></script>
 <script type="text/html" data-template-name="lynx-get-meta">
+    <div class="form-row">
+        <label for="node-input-label"><i class="fa fa-tag"></i> Label</label>
+        <input type="text" id="node-input-label"/>
+    </div>
     <div class="form-row">
         <input id="node-input-use_msg" type="checkbox" style="width: 20px;vertical-align: top;margin-right: 5px">
         <label for="node-input-use_msg" style="width: auto"> Settings from flow</label>
