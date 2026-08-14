@@ -45,6 +45,34 @@ module.exports = function (RED) {
     const node = this
     this.users = {}
 
+    // Shared cache of Lynx functions per installation so nodes that use the
+    // same server connection don't each fetch and hold their own copy.
+    this.functionCache = {}
+    this._functionFetches = {}
+
+    this.getFunctions = (installationId, force) => {
+      if (!force && node.functionCache[installationId]) {
+        return Promise.resolve(node.functionCache[installationId])
+      }
+
+      if (node._functionFetches[installationId]) {
+        return node._functionFetches[installationId]
+      }
+
+      const cli = new lynx.LynxClient(node.url, node.api_key)
+      const fetchPromise = cli.getFunctions(installationId, {}).then((list) => {
+        node.functionCache[installationId] = list
+        delete node._functionFetches[installationId]
+        return list
+      }).catch((err) => {
+        delete node._functionFetches[installationId]
+        throw err
+      })
+
+      node._functionFetches[installationId] = fetchPromise
+      return fetchPromise
+    }
+
     this.register = (lynxNode) => {
       node.users[lynxNode.id] = lynxNode
 

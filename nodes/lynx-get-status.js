@@ -1,5 +1,7 @@
 'use strict'
 
+const watchFunctions = require('./function-watch')
+
 module.exports = function (RED) {
     const lynx = require('@iotopen/node-lynx')
 
@@ -15,6 +17,18 @@ module.exports = function (RED) {
         if (!this.server) {
             return this.error(RED._('lynx.errors.missing-config'))
         }
+
+        node.server.register(this)
+        const watcher = watchFunctions(RED, node, node.server, {
+            clientId: this.client_id,
+            installationId: this.installation_id,
+            functionId: this.function_id
+        });
+
+        this.on('close', (done) => {
+            watcher.close();
+            node.server.deregister(node, done);
+        });
 
         this.on('input', (msg, send, done) => {
             this.status({

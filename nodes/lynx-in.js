@@ -1,8 +1,9 @@
 'use strict'
 
-const lynx = require("@iotopen/node-lynx");
+const watchFunctions = require('./function-watch')
+
 module.exports = function (RED) {
-    function LynxInNode(config) {
+    function LynxInNode (config) {
         RED.nodes.createNode(this, config)
         const node = this
         this.server = RED.nodes.getNode(config.server)
@@ -14,6 +15,9 @@ module.exports = function (RED) {
         this.filter = config.filter;
 
         let functions = [];
+        let subscribedTopics = new Set();
+        let watcher = null;
+        const fullTopic = this.client_id + '/' + this.topic;
 
         if (!this.server) {
             return this.error(RED._('lynx.errors.missing-config'))
@@ -25,33 +29,31 @@ module.exports = function (RED) {
             text: 'node-red:common.status.disconnected'
         })
 
-        const setupFunctions = () => {
-            const baseURL = node.server.url;
-            const apiKey = node.server.api_key;
-            const installationId = this.installation_id;
-            const cli = new lynx.LynxClient(baseURL, apiKey);
-            let filter = {};
-            this.filter.forEach(f => {
-                filter[f.key] = f.value;
-            });
-            cli.getFunctions(installationId, filter).then(res => {
-                functions = res;
-                functions.forEach((fn) => {
-                    if (fn.meta.topic_read) {
-                        const fullTopic = this.client_id + '/' + fn.meta.topic_read;
-                        node.server.unsubscribe(fullTopic, node.id, true);
-                        node.server.subscribe(fullTopic, 0, handleMessage, node.id);
-                    }
-                });
-            }).catch((e) => {
-                console.log(e)
-            });
+        const matchesFilter = (fn) => {
+            return this.filter.every(f => fn.meta[f.key] === f.value);
         };
 
-        const handleUpdateMessage = (topic, payload, packet) => {
-            if (node.use_meta_filter) {
-                setupFunctions();
-            }
+        const updateSubscriptions = (newFunctions) => {
+            const newTopics = new Set();
+            newFunctions.forEach((fn) => {
+                if (fn.meta.topic_read) {
+                    newTopics.add(this.client_id + '/' + fn.meta.topic_read);
+                }
+            });
+
+            subscribedTopics.forEach((topic) => {
+                if (!newTopics.has(topic)) {
+                    node.server.unsubscribe(topic, node.id, true);
+                }
+            });
+
+            newTopics.forEach((topic) => {
+                if (!subscribedTopics.has(topic)) {
+                    node.server.subscribe(topic, 0, handleMessage, node.id);
+                }
+            });
+
+            subscribedTopics = newTopics;
         };
 
         const handleMessage = (topic, payload, packet) => {
@@ -90,10 +92,20 @@ module.exports = function (RED) {
 
         node.server.register(this)
         if (node.use_meta_filter) {
-            setupFunctions();
-            node.server.subscribe(this.client_id + '/evt/functionx/updated', 0, handleUpdateMessage, node.id);
+            watcher = watchFunctions(RED, node, node.server, {
+                clientId: this.client_id,
+                installationId: this.installation_id,
+                onUpdate: (list) => {
+                    functions = list.filter(matchesFilter);
+                    updateSubscriptions(functions);
+                }
+            });
         } else {
-            const fullTopic = this.client_id + '/' + this.topic;
+            watcher = watchFunctions(RED, node, node.server, {
+                clientId: this.client_id,
+                installationId: this.installation_id,
+                functionId: this.function_id
+            });
             node.server.subscribe(fullTopic, 0, handleMessage, node.id);
         }
 
@@ -106,8 +118,13 @@ module.exports = function (RED) {
         }
 
         this.on('close', (removed, done) => {
+            if (watcher) watcher.close();
             if (node.server) {
-                node.server.unsubscribe(fullTopic, node.id, removed)
+                if (node.use_meta_filter) {
+                    subscribedTopics.forEach((topic) => node.server.unsubscribe(topic, node.id, removed));
+                } else {
+                    node.server.unsubscribe(fullTopic, node.id, removed)
+                }
                 node.server.deregister(node, done)
             }
         });
