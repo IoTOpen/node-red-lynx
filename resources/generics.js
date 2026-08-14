@@ -62,7 +62,7 @@ class NodeGenerics {
                 // Prefer matching on the stored meta key (unambiguous). Fall
                 // back to matching by value for nodes saved before the key
                 // itself was persisted.
-                let isMatch = this.node.type ? key === this.node.type : val === this.node.topic;
+                let isMatch = this.node.topic_type ? key === this.node.topic_type : val === this.node.topic;
                 if (isMatch && !alreadySelected) {
                     alreadySelected = true;
                     shouldSelectFirst = false;
