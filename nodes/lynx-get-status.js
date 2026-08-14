@@ -18,11 +18,30 @@ module.exports = function (RED) {
             return this.error(RED._('lynx.errors.missing-config'))
         }
 
+        let currentTopic = this.topic;
+        let topicMetaKey = null;
+
+        const updateStaticTopic = (list) => {
+            const fn = list.find((f) => String(f.id) === String(node.function_id));
+            if (!fn || !fn.meta) return;
+
+            if (!topicMetaKey) {
+                topicMetaKey = Object.keys(fn.meta).find((k) => k.startsWith('topic_') && fn.meta[k] === currentTopic);
+            }
+            if (!topicMetaKey) return;
+
+            const newTopic = fn.meta[topicMetaKey];
+            if (!newTopic || newTopic === currentTopic) return;
+
+            currentTopic = newTopic;
+        };
+
         node.server.register(this)
         const watcher = watchFunctions(RED, node, node.server, {
             clientId: this.client_id,
             installationId: this.installation_id,
-            functionId: this.function_id
+            functionId: this.function_id,
+            onUpdate: updateStaticTopic
         });
 
         this.on('close', (done) => {
@@ -38,7 +57,7 @@ module.exports = function (RED) {
             })
 
             const cli = new lynx.LynxClient(node.server.url, node.server.api_key)
-            cli.getStatus(node.installation_id, [node.topic]).then(statuses => {
+            cli.getStatus(node.installation_id, [currentTopic]).then(statuses => {
                 if (statuses.length === 0) {
                     this.status({
                         fill: 'yellow',

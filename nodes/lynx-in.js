@@ -17,7 +17,8 @@ module.exports = function (RED) {
         let functions = [];
         let subscribedTopics = new Set();
         let watcher = null;
-        const fullTopic = this.client_id + '/' + this.topic;
+        let currentTopic = this.topic;
+        let topicMetaKey = null;
 
         if (!this.server) {
             return this.error(RED._('lynx.errors.missing-config'))
@@ -54,6 +55,23 @@ module.exports = function (RED) {
             });
 
             subscribedTopics = newTopics;
+        };
+
+        const updateStaticTopic = (list) => {
+            const fn = list.find((f) => String(f.id) === String(this.function_id));
+            if (!fn || !fn.meta) return;
+
+            if (!topicMetaKey) {
+                topicMetaKey = Object.keys(fn.meta).find((k) => k.startsWith('topic_') && fn.meta[k] === currentTopic);
+            }
+            if (!topicMetaKey) return;
+
+            const newTopic = fn.meta[topicMetaKey];
+            if (!newTopic || newTopic === currentTopic) return;
+
+            node.server.unsubscribe(this.client_id + '/' + currentTopic, node.id, true);
+            currentTopic = newTopic;
+            node.server.subscribe(this.client_id + '/' + currentTopic, 0, handleMessage, node.id);
         };
 
         const handleMessage = (topic, payload, packet) => {
@@ -104,9 +122,10 @@ module.exports = function (RED) {
             watcher = watchFunctions(RED, node, node.server, {
                 clientId: this.client_id,
                 installationId: this.installation_id,
-                functionId: this.function_id
+                functionId: this.function_id,
+                onUpdate: updateStaticTopic
             });
-            node.server.subscribe(fullTopic, 0, handleMessage, node.id);
+            node.server.subscribe(this.client_id + '/' + currentTopic, 0, handleMessage, node.id);
         }
 
         if (this.server.connected) {
@@ -123,7 +142,7 @@ module.exports = function (RED) {
                 if (node.use_meta_filter) {
                     subscribedTopics.forEach((topic) => node.server.unsubscribe(topic, node.id, removed));
                 } else {
-                    node.server.unsubscribe(fullTopic, node.id, removed)
+                    node.server.unsubscribe(this.client_id + '/' + currentTopic, node.id, removed)
                 }
                 node.server.deregister(node, done)
             }
