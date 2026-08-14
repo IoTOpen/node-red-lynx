@@ -9,6 +9,7 @@ module.exports = function (RED) {
         this.server = RED.nodes.getNode(config.server)
         this.use_meta_filter = config.use_meta_filter;
         this.topic = config.topic
+        this.type = config.type
         this.client_id = config.client_id
         this.installation_id = config.installation_id
         this.function_id = config.function_id
@@ -18,7 +19,11 @@ module.exports = function (RED) {
         let subscribedTopics = new Set();
         let watcher = null;
         let currentTopic = this.topic;
-        let topicMetaKey = null;
+        // The meta key (e.g. "topic_read") the configured topic came from.
+        // Known directly for nodes saved after this field was added; for
+        // older configs we fall back to guessing it by matching the value,
+        // which is ambiguous if two topic_* keys share the same value.
+        let topicMetaKey = this.type || null;
 
         if (!this.server) {
             return this.error(RED._('lynx.errors.missing-config'))
