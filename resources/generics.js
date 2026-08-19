@@ -58,8 +58,12 @@ class NodeGenerics {
             .map(key => {
                 let val = this.selectedFunction.meta[key];
                 let metaType = key.substring(key.indexOf('_') + 1);
-                let topicButton = this.getTopicButton(metaType, val);
-                if (val === this.node.topic && !alreadySelected) {
+                let topicButton = this.getTopicButton(key, metaType, val);
+                // Prefer matching on the stored meta key (unambiguous). Fall
+                // back to matching by value for nodes saved before the key
+                // itself was persisted.
+                let isMatch = this.node.topic_type ? key === this.node.topic_type : val === this.node.topic;
+                if (isMatch && !alreadySelected) {
                     alreadySelected = true;
                     shouldSelectFirst = false;
                     topicButton.click();
@@ -74,12 +78,13 @@ class NodeGenerics {
         }
     };
 
-    getTopicButton = (metaType, metaValue) => {
+    getTopicButton = (metaKey, metaType, metaValue) => {
         let btn = $('<button type="button" id="type-' + metaType + '" value="' + metaValue + '" class="red-ui-button toggle type-button-group">' + metaType + '<button/>');
         btn.on('click', (e) => {
             $('.type-button-group').removeClass('selected');
             btn.addClass('selected');
             this.selectedTopic = metaValue;
+            this.selectedTopicKey = metaKey;
         });
         return btn[0];
     };
